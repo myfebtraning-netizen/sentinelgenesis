@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Product Testing | Audit Desk</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #142033;
+      --muted: #68768a;
+      --line: #e5eaf1;
+      --surface: #fff;
+      --canvas: #f4f7fb;
+      --accent: #4d66e8;
+      --accent-dark: #364fd0;
+      --shadow: 0 12px 32px rgba(24, 39, 75, .07);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { background: #101827; color: white; }
+    .topbar-inner { max-width: 1240px; min-height: 76px; margin: auto; padding: 14px 24px; display: flex; gap: 20px; justify-content: space-between; align-items: center; }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #344bd0; font-size: 21px; }
+    .brand h1 { font-size: 17px; margin: 0; letter-spacing: -.02em; }
+    .brand p { margin: 2px 0 0; color: #aab5c8; font-size: 12px; }
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    .button { min-height: 39px; border: 1px solid transparent; border-radius: 9px; padding: 8px 13px; font-weight: 650; transition: .15s ease; }
+    .button:hover { transform: translateY(-1px); }
+    .button.primary { background: var(--accent); color: white; }
+    .button.primary:hover { background: var(--accent-dark); }
+    .button.dark-secondary { color: #e9edfa; background: #202c40; border-color: #39465c; }
+    .button.light { color: var(--ink); border-color: var(--line); background: white; }
+    .button.danger { color: #b42335; background: #fff3f4; border-color: #f6cbd0; }
+    main { max-width: 1240px; margin: 28px auto 60px; padding: 0 24px; }
+    .intro { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 21px; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    h2 { margin: 0; font-size: 25px; letter-spacing: -.04em; }
+    .intro p:last-child { margin: 5px 0 0; color: var(--muted); }
+    .sync-state { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 19px; }
+    .metric, .panel, .ticket-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+    .metric { padding: 17px 19px; }
+    .metric-label { color: var(--muted); font-size: 13px; }
+    .metric strong { display: block; margin-top: 3px; font-size: 27px; letter-spacing: -.04em; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(290px, .78fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+    .panel { padding: 18px; }
+    .panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .panel-heading h3 { font-size: 16px; margin: 0; }
+    .panel-heading p { color: var(--muted); font-size: 12px; margin: 3px 0 0; }
+    .ticket-list { display: grid; gap: 9px; }
+    .ticket-card { box-shadow: none; padding: 13px; text-align: left; width: 100%; color: inherit; transition: .15s ease; }
+    .ticket-card:hover { border-color: #b9c4fa; }
+    .ticket-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,102,232,.11); }
+    .ticket-top { display: flex; justify-content: space-between; gap: 9px; align-items: start; }
+    .ticket-title { display: block; font-weight: 700; }
+    .ticket-module { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .ticket-description { margin: 8px 0 0; color: #59677b; font-size: 13px; overflow-wrap: anywhere; }
+    .tag { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #edf0ff; color: #485bcc; font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .tag.status { background: #eef8f2; color: #238352; }
+    .tag.priority-high, .tag.priority-critical { background: #fff0ed; color: #c34a34; }
+    .tag.priority-low { background: #f0f3f7; color: #657286; }
+    .ticket-tags { display: flex; gap: 6px; margin-top: 10px; }
+    .empty { padding: 24px 12px; border: 1px dashed #d7deea; border-radius: 11px; color: var(--muted); text-align: center; font-size: 13px; }
+    .notes-panel { min-width: 0; }
+    .active-module { color: var(--accent); font-size: 12px; font-weight: 700; }
+    .note-form { display: grid; gap: 10px; padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+    textarea, input[type="text"], select { width: 100%; border: 1px solid #d9e0eb; border-radius: 9px; padding: 10px 11px; outline: none; background: white; color: var(--ink); }
+    textarea:focus, input:focus, select:focus { border-color: #8392f0; box-shadow: 0 0 0 3px rgba(77,102,232,.1); }
+    textarea { min-height: 76px; resize: vertical; }
+    .form-tools { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .form-tools label { color: var(--muted); font-size: 12px; }
+    .file-input { max-width: 100%; }
+    .notes-feed { max-height: 450px; overflow-y: auto; display: grid; gap: 11px; padding: 1px 5px 1px 1px; scrollbar-color: #bcc5d5 transparent; }
+    .note { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 13px; background: #fff; }
+    .note-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .note-meta { color: var(--muted); font-size: 11px; }
+    .note-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+    .note-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
+    .note-attachments img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid var(--line); border-radius: 8px; }
+    .note-attachments audio { width: 100%; grid-column: 1 / -1; }
+    .attachment-name { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+    .note-delete { border: 0; padding: 5px 8px; border-radius: 7px; background: #fff2f3; color: #b42335; font-size: 11px; font-weight: 700; }
+    .note-delete:hover { background: #ffe1e4; }
+    dialog { border: 0; border-radius: 15px; width: min(520px, calc(100% - 28px)); max-height: 88vh; padding: 0; box-shadow: 0 28px 90px rgba(8,18,38,.3); }
+    dialog::backdrop { background: rgba(10,19,34,.55); backdrop-filter: blur(2px); }
+    .modal-inner { padding: 22px; }
+    .modal-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 17px; }
+    .modal-head h3 { margin: 0; font-size: 19px; }
+    .modal-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .close { border: 0; background: transparent; color: var(--muted); font-size: 21px; line-height: 1; }
+    .ticket-form { display: grid; gap: 12px; }
+    .field { display: grid; gap: 5px; }
+    .field span { color: #455267; font-size: 12px; font-weight: 700; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .gallery-dialog { width: min(900px, calc(100% - 28px)); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; max-height: 62vh; overflow: auto; }
+    .gallery-item { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .gallery-item img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+    .gallery-caption { padding: 9px; }
+    .gallery-caption strong { display: block; font-size: 12px; }
+    .gallery-caption span { color: var(--muted); font-size: 10px; }
+    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 5; border-radius: 10px; padding: 11px 15px; background: #142033; color: white; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #a52a3a; }
+    @media (max-width: 760px) {
+      .topbar-inner { align-items: start; flex-direction: column; }
+      .actions { width: 100%; }
+      .actions .button { flex: 1; }
+      main { margin-top: 20px; padding: 0 14px; }
+      .intro { align-items: start; flex-direction: column; }
+      .metrics { gap: 8px; }
+      .metric { padding: 13px; }
+      .metric strong { font-size: 23px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 430px) {
+      .metrics { grid-template-columns: 1fr; }
+      .metric { display: flex; justify-content: space-between; align-items: center; }
+      .metric strong { margin: 0; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">✓</div>
+        <div><h1>Product Testing</h1><p>Quality assurance · Audit desk</p></div>
+      </div>
+      <nav class="actions" aria-label="Dashboard actions">
+        <button class="button primary" id="new-ticket-button">＋ New Ticket</button>
+        <button class="button dark-secondary" id="sync-button">🔄 Sync Notes</button>
+        <button class="button dark-secondary" id="gallery-button">🖼️ View Gallery</button>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">Workspace / Audit overview</p><h2>Testing &amp; audit tickets</h2><p>Track module reviews, evidence, and findings in one place.</p></div>
+      <div class="sync-state" id="sync-state" aria-live="polite">Connecting…</div>
+    </section>
+    <section class="metrics" aria-label="Ticket metrics">
+      <div class="metric"><span class="metric-label">Total tickets</span><strong id="total-count">0</strong></div>
+      <div class="metric"><span class="metric-label">Open audits</span><strong id="open-count">0</strong></div>
+      <div class="metric"><span class="metric-label">Resolved</span><strong id="resolved-count">0</strong></div>
+    </section>
+    <div class="dashboard-grid">
+      <section class="panel">
+        <div class="panel-heading"><div><h3>Module tickets</h3><p>Select a ticket to review its audit log.</p></div></div>
+        <div class="ticket-list" id="ticket-list"><div class="empty">Loading tickets…</div></div>
+      </section>
+      <section class="panel notes-panel">
+        <div class="panel-heading">
+          <div><h3>Audit Notes &amp; Evidence Log</h3><p id="active-module" class="active-module">Select a module ticket</p></div>
+        </div>
+        <form class="note-form" id="note-form">
+          <textarea id="note-text" maxlength="10000" placeholder="Add an audit note or testing observation…" aria-label="Audit note"></textarea>
+          <div class="form-tools">
+            <label>Attach images or audio <input class="file-input" id="attachment-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,audio/webm,audio/ogg,audio/wav,audio/mpeg" multiple></label>
+            <button class="button primary" type="submit" id="save-note-button">Add note</button>
+          </div>
+        </form>
+        <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes.</div></div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="ticket-dialog">
+    <div class="modal-inner">
+      <div class="modal-head"><div><h3>Create a ticket</h3><p>Add a module testing or audit item.</p></div><button class="close" type="button" data-close="ticket-dialog" aria-label="Close">×</button></div>
+      <form class="ticket-form" id="ticket-form">
+        <label class="field"><span>Module ID</span><input name="moduleId" type="text" maxlength="100" placeholder="e.g. checkout-v2" required></label>
+        <label class="field"><span>Ticket title</span><input name="title" type="text" maxlength="200" placeholder="e.g. Validate payment failure states" required></label>
+        <label class="field"><span>Description</span><textarea name="description" maxlength="5000" placeholder="Testing scope, expected behavior, or audit context…"></textarea></label>
+        <div class="two-col">
+          <label class="field"><span>Status</span><select name="status"><option>Open</option><option>In Progress</option><option>Resolved</option></select></label>
+          <label class="field"><span>Priority</span><select name="priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></label>
+        </div>
+        <button class="button primary" type="submit">Create ticket</button>
+      </form>
+    </div>
+  </dialog>
+  <dialog class="gallery-dialog" id="gallery-dialog">
+    <div class="modal-inner">
+      <div class="modal-head"><div><h3>Evidence gallery</h3><p>Uploaded image evidence from every module.</p></div><button class="close" type="button" data-close="gallery-dialog" aria-label="Close">×</button></div>
+      <div class="gallery-grid" id="gallery-grid"><div class="empty">Loading evidence…</div></div>
+    </div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const state = { tickets: [], activeModuleId: null };
+    const ticketList = document.getElementById('ticket-list');
+    const notesFeed = document.getElementById('notes-feed');
+    const toast = document.getElementById('toast');
+    let toastTimer;
+
+    function showToast(message, isError = false) {
+      toast.textContent = message;
+      toast.classList.toggle('error', isError);
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        let message = `Request failed (${response.status})`;
+        try { message = (await response.json()).error || message; } catch {}
+        throw new Error(message);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    function makeTag(text, className = '') {
+      const tag = document.createElement('span');
+      tag.className = `tag ${className}`.trim();
+      tag.textContent = text;
+      return tag;
+    }
+
+    function renderTickets() {
+      document.getElementById('total-count').textContent = state.tickets.length;
+      document.getElementById('open-count').textContent = state.tickets.filter((ticket) => ticket.status !== 'Resolved').length;
+      document.getElementById('resolved-count').textContent = state.tickets.filter((ticket) => ticket.status === 'Resolved').length;
+      ticketList.replaceChildren();
+      if (!state.tickets.length) {
+        ticketList.innerHTML = '<div class="empty">No tickets yet. Create one to start an audit.</div>';
+        return;
+      }
+      for (const ticket of [...state.tickets].reverse()) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `ticket-card${state.activeModuleId === ticket.moduleId ? ' selected' : ''}`;
+        const top = document.createElement('div');
+        top.className = 'ticket-top';
+        const titleGroup = document.createElement('span');
+        const title = document.createElement('span');
+        title.className = 'ticket-title';
+        title.textContent = ticket.title;
+        const module = document.createElement('span');
+        module.className = 'ticket-module';
+        module.textContent = `Module · ${ticket.moduleId}`;
+        titleGroup.append(title, module);
+        top.append(titleGroup, makeTag(ticket.status, 'status'));
+        card.append(top);
+        if (ticket.description) {
+          const description = document.createElement('p');
+          description.className = 'ticket-description';
+          description.textContent = ticket.description;
+          card.append(description);
+        }
+        const tags = document.createElement('div');
+        tags.className = 'ticket-tags';
+        tags.append(makeTag(ticket.priority, `priority-${ticket.priority.toLowerCase()}`));
+        card.append(tags);
+        card.addEventListener('click', () => selectModule(ticket.moduleId));
+        ticketList.append(card);
+      }
+    }
+
+    async function loadTickets() {
+      state.tickets = await api('/api/tickets');
+      renderTickets();
+      if (!state.activeModuleId && state.tickets.length) await selectModule(state.tickets[state.tickets.length - 1].moduleId);
+    }
+
+    async function loadAuditNotesFromApi() {
+      if (!state.activeModuleId) return;
+      const moduleId = encodeURIComponent(state.activeModuleId);
+      const notes = await api(`/api/notes/${moduleId}`);
+      renderNotes(notes);
+      document.getElementById('sync-state').textContent = `Last synced ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    }
+
+    async function selectModule(moduleId) {
+      state.activeModuleId = moduleId;
+      document.getElementById('active-module').textContent = `Module · ${moduleId}`;
+      renderTickets();
+      notesFeed.innerHTML = '<div class="empty">Loading audit notes…</div>';
+      try { await loadAuditNotesFromApi(); }
+      catch (error) { showToast(error.message, true); }
+    }
+
+    function renderNotes(notes) {
+      notesFeed.replaceChildren();
+      if (!notes.length) {
+        notesFeed.innerHTML = '<div class="empty">No notes yet for this module. Add the first audit observation above.</div>';
+        return;
+      }
+      for (const note of [...notes].reverse()) {
+        const article = document.createElement('article');
+        article.className = 'note';
+        const head = document.createElement('div');
+        head.className = 'note-head';
+        const date = document.createElement('span');
+        date.className = 'note-meta';
+        date.textContent = new Date(note.createdAt).toLocaleString();
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'note-delete';
+        remove.textContent = '🗑️ Delete Note';
+        remove.addEventListener('click', () => deleteNote(note.id));
+        head.append(date, remove);
+        article.append(head);
+        if (note.text) {
+          const text = document.createElement('p');
+          text.className = 'note-text';
+          text.textContent = note.text;
+          article.append(text);
+        }
+        if (note.attachments && note.attachments.length) {
+          const attachments = document.createElement('div');
+          attachments.className = 'note-attachments';
+          for (const attachment of note.attachments) {
+            if (attachment.mimeType.startsWith('image/')) {
+              const figure = document.createElement('div');
+              const image = document.createElement('img');
+              image.src = attachment.url;
+              image.alt = attachment.name || 'Audit evidence';
+              image.loading = 'lazy';
+              const caption = document.createElement('span');
+              caption.className = 'attachment-name';
+              caption.textContent = attachment.name;
+              figure.append(image, caption);
+              attachments.append(figure);
+            } else if (attachment.mimeType.startsWith('audio/')) {
+              const audio = document.createElement('audio');
+              audio.controls = true;
+              audio.preload = 'none';
+              audio.src = attachment.url;
+              audio.setAttribute('aria-label', attachment.name || 'Audit audio attachment');
+              attachments.append(audio);
+            }
+          }
+          article.append(attachments);
+        }
+        notesFeed.append(article);
+      }
+    }
+
+    async function deleteNote(noteId) {
+      const password = window.prompt('Enter Master Password to delete:');
+      if (password !== 'cat123123') {
+        window.alert('Incorrect Master Password. Access Denied.');
+        return;
+      }
+      try {
+        await api(`/api/notes/${encodeURIComponent(noteId)}`, {
+          method: 'DELETE',
+          headers: { 'x-master-password': 'cat123123' },
+        });
+        await loadAuditNotesFromApi();
+        showToast('Note deleted.');
+      } catch (error) { showToast(error.message, true); }
+    }
+
+    function fileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name: file.name, data: reader.result });
+        reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById('note-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!state.activeModuleId) {
+        showToast('Select a module ticket first.', true);
+        return;
+      }
+      const button = document.getElementById('save-note-button');
+      button.disabled = true;
+      try {
+        const files = [...document.getElementById('attachment-input').files];
+        if (files.some((file) => file.size > 10 * 1024 * 1024)) throw new Error('Each attachment must be 10 MB or smaller.');
+        const attachments = await Promise.all(files.map(fileAsDataUrl));
+        await api(`/api/notes/${encodeURIComponent(state.activeModuleId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: document.getElementById('note-text').value, attachments }),
+        });
+        document.getElementById('note-form').reset();
+        await loadAuditNotesFromApi();
+        showToast('Audit note added.');
+      } catch (error) { showToast(error.message, true); }
+      finally { button.disabled = false; }
+    });
+
+    document.getElementById('ticket-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      try {
+        const ticket = await api('/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(form.entries())),
+        });
+        state.tickets.push(ticket);
+        renderTickets();
+        document.getElementById('ticket-dialog').close();
+        event.currentTarget.reset();
+        await selectModule(ticket.moduleId);
+        showToast('Ticket created.');
+      } catch (error) { showToast(error.message, true); }
+    });
+
+    document.getElementById('new-ticket-button').addEventListener('click', () => document.getElementById('ticket-dialog').showModal());
+    document.getElementById('sync-button').addEventListener('click', async () => {
+      try {
+        await loadTickets();
+        if (state.activeModuleId) await loadAuditNotesFromApi();
+        showToast('Synced!');
+      } catch (error) { showToast(error.message, true); }
+    });
+    document.getElementById('gallery-button').addEventListener('click', async () => {
+      const dialog = document.getElementById('gallery-dialog');
+      const grid = document.getElementById('gallery-grid');
+      grid.innerHTML = '<div class="empty">Loading evidence…</div>';
+      dialog.showModal();
+      try {
+        const gallery = await api('/api/gallery');
+        grid.replaceChildren();
+        if (!gallery.length) {
+          grid.innerHTML = '<div class="empty">No image evidence has been uploaded yet.</div>';
+          return;
+        }
+        for (const item of [...gallery].reverse()) {
+          const card = document.createElement('div');
+          card.className = 'gallery-item';
+          const image = document.createElement('img');
+          image.src = item.url;
+          image.alt = item.name || 'Audit evidence';
+          image.loading = 'lazy';
+          const caption = document.createElement('div');
+          caption.className = 'gallery-caption';
+          const module = document.createElement('strong');
+          module.textContent = item.moduleId;
+          const note = document.createElement('span');
+          note.textContent = item.text || new Date(item.createdAt).toLocaleDateString();
+          caption.append(module, note);
+          card.append(image, caption);
+          grid.append(card);
+        }
+      } catch (error) {
+        grid.innerHTML = '';
+        showToast(error.message, true);
+      }
+    });
+    document.querySelectorAll('[data-close]').forEach((button) => {
+      button.addEventListener('click', () => document.getElementById(button.dataset.close).close());
+    });
+    document.querySelectorAll('dialog').forEach((dialog) => {
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+    });
+
+    loadTickets().catch((error) => {
+      ticketList.innerHTML = '<div class="empty">Could not load tickets.</div>';
+      document.getElementById('sync-state').textContent = 'Connection error';
+      showToast(error.message, true);
+    });
+    setInterval(() => {
+      loadAuditNotesFromApi().catch((error) => showToast(error.message, true));
+    }, 5000);
+  </script>
+</body>
+</html>
