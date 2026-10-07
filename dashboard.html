@@ -3,411 +3,857 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>Product Testing | Audit Desk</title>
+  <meta name="theme-color" content="#0a1128">
+  <title>SiyanoAV Total Security | Audit Desk</title>
   <style>
     :root {
-      color-scheme: light;
-      --ink: #142033;
-      --muted: #68768a;
-      --line: #e5eaf1;
-      --surface: #fff;
-      --canvas: #f4f7fb;
-      --accent: #4d66e8;
-      --accent-dark: #364fd0;
-      --shadow: 0 12px 32px rgba(24, 39, 75, .07);
+      color-scheme: dark;
+      --bg: #0a1128;
+      --bg-raised: #0f172a;
+      --surface: rgba(17, 30, 55, .78);
+      --surface-strong: #111d35;
+      --line: rgba(255, 255, 255, .1);
+      --text: #f2f7ff;
+      --muted: #9aabc5;
+      --cyan: #38bdf8;
+      --blue: #2563eb;
+      --blue-bright: #0284c7;
+      --green: #34d399;
+      --red: #fb7185;
+      --shadow: 0 24px 80px rgba(1, 8, 25, .38);
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--canvas); color: var(--ink); font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
-    button, input, textarea, select { font: inherit; }
-    button { cursor: pointer; }
-    .topbar { background: #101827; color: white; }
-    .topbar-inner { max-width: 1240px; min-height: 76px; margin: auto; padding: 14px 24px; display: flex; gap: 20px; justify-content: space-between; align-items: center; }
-    .brand { display: flex; gap: 12px; align-items: center; }
-    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #344bd0; font-size: 21px; }
-    .brand h1 { font-size: 17px; margin: 0; letter-spacing: -.02em; }
-    .brand p { margin: 2px 0 0; color: #aab5c8; font-size: 12px; }
-    .actions { display: flex; gap: 9px; flex-wrap: wrap; }
-    .button { min-height: 39px; border: 1px solid transparent; border-radius: 9px; padding: 8px 13px; font-weight: 650; transition: .15s ease; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(ellipse at 50% -20%, rgba(2,132,199,.2), transparent 42%), linear-gradient(145deg, #0a1128, #0b142a 62%, #0a1128); font: 14px/1.55 Inter, "Segoe UI", Roboto, Arial, sans-serif; }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    [hidden] { display: none !important; }
+    .auth-screen { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow-y: auto; padding: 24px; background: radial-gradient(ellipse at 50% 0, rgba(2,132,199,.23), transparent 45%), rgba(7, 13, 30, .97); }
+    .auth-card { width: min(100%, 448px); overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(155deg, rgba(17,30,55,.96), rgba(10,17,40,.97)); box-shadow: 0 30px 100px rgba(0,0,0,.5), 0 0 50px rgba(2,132,199,.08); }
+    .auth-brand { padding: 27px 28px 20px; text-align: center; }
+    .auth-logo { width: 72px; height: 72px; margin: 0 auto 14px; object-fit: contain; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.05); padding: 6px; }
+    .auth-brand h1 { margin: 0; font-size: 21px; letter-spacing: -.035em; }
+    .auth-brand p { margin: 6px 0 0; color: var(--muted); }
+    .auth-tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--line); }
+    .auth-tab { border: 0; border-bottom: 2px solid transparent; padding: 12px 5px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .auth-tab.active { border-bottom-color: var(--cyan); color: #e7f8ff; background: rgba(56,189,248,.05); }
+    .auth-content { min-height: 267px; padding: 23px 28px 28px; }
+    .auth-content h2 { margin: 0 0 4px; font-size: 18px; }
+    .auth-content > p { margin: 0 0 18px; color: var(--muted); font-size: 12px; }
+    .form-stack { display: grid; gap: 12px; }
+    .field { display: grid; gap: 6px; }
+    .field label, .field > span { color: #cbd8eb; font-size: 12px; font-weight: 650; }
+    input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; outline: none; padding: 11px 12px; color: var(--text); background: rgba(5,12,28,.64); transition: border-color .16s, box-shadow .16s; }
+    input::placeholder, textarea::placeholder { color: #687c9a; }
+    input:focus, textarea:focus { border-color: rgba(56,189,248,.7); box-shadow: 0 0 0 3px rgba(2,132,199,.16); }
+    textarea { min-height: 100px; resize: vertical; }
+    .button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; min-height: 40px; border: 1px solid transparent; border-radius: 10px; padding: 9px 14px; font-weight: 720; transition: transform .16s, border-color .16s, background .16s, box-shadow .16s; }
     .button:hover { transform: translateY(-1px); }
-    .button.primary { background: var(--accent); color: white; }
-    .button.primary:hover { background: var(--accent-dark); }
-    .button.dark-secondary { color: #e9edfa; background: #202c40; border-color: #39465c; }
-    .button.light { color: var(--ink); border-color: var(--line); background: white; }
-    .button.danger { color: #b42335; background: #fff3f4; border-color: #f6cbd0; }
-    main { max-width: 1240px; margin: 28px auto 60px; padding: 0 24px; }
-    .intro { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 21px; }
-    .eyebrow { margin: 0 0 4px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-    h2 { margin: 0; font-size: 25px; letter-spacing: -.04em; }
-    .intro p:last-child { margin: 5px 0 0; color: var(--muted); }
-    .sync-state { color: var(--muted); font-size: 12px; white-space: nowrap; }
-    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 19px; }
-    .metric, .panel, .ticket-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
-    .metric { padding: 17px 19px; }
-    .metric-label { color: var(--muted); font-size: 13px; }
-    .metric strong { display: block; margin-top: 3px; font-size: 27px; letter-spacing: -.04em; }
-    .dashboard-grid { display: grid; grid-template-columns: minmax(290px, .78fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
-    .panel { padding: 18px; }
-    .panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-    .panel-heading h3 { font-size: 16px; margin: 0; }
-    .panel-heading p { color: var(--muted); font-size: 12px; margin: 3px 0 0; }
+    .button:disabled { cursor: wait; opacity: .6; transform: none; }
+    .button.primary { border-color: rgba(125,211,252,.18); background: linear-gradient(110deg, #0284c7, #2563eb); color: white; box-shadow: 0 8px 25px rgba(2,132,199,.22); }
+    .button.primary:hover { box-shadow: 0 10px 28px rgba(2,132,199,.35); }
+    .button.ghost { border-color: var(--line); background: rgba(255,255,255,.045); color: #dce8f9; }
+    .button.ghost:hover { border-color: rgba(56,189,248,.35); background: rgba(56,189,248,.08); }
+    .button.danger { border-color: rgba(251,113,133,.25); background: rgba(251,113,133,.09); color: #ff9aa9; }
+    .button.block { width: 100%; }
+    .button.small { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+    .auth-message { min-height: 19px; color: var(--red); font-size: 12px; }
+    .note-hint { margin-top: 12px; color: #8294ae; font-size: 11px; }
+    .app-shell { min-height: 100vh; }
+    .topbar { border-bottom: 1px solid var(--line); background: rgba(10,17,40,.72); backdrop-filter: blur(20px); }
+    .topbar-inner { max-width: 1400px; margin: 0 auto; padding: 15px 28px; display: flex; justify-content: space-between; align-items: center; gap: 22px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand-logo { width: 47px; height: 47px; flex: 0 0 auto; object-fit: contain; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.05); padding: 4px; }
+    .brand-copy { min-width: 0; }
+    .brand-copy .eyebrow { margin: 0 0 3px; color: var(--cyan); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; font-weight: 800; }
+    .brand-copy h1 { margin: 0; font-size: clamp(15px, 1.9vw, 21px); line-height: 1.2; letter-spacing: -.035em; }
+    .brand-copy p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .header-actions { display: flex; align-items: center; justify-content: end; gap: 8px; flex-wrap: wrap; }
+    .profile-card { display: flex; align-items: center; gap: 10px; margin-left: 8px; padding-left: 15px; border-left: 1px solid var(--line); }
+    .avatar { width: 42px; height: 42px; flex: 0 0 auto; object-fit: cover; border: 1px solid rgba(56,189,248,.35); border-radius: 50%; background: #152846; }
+    .profile-copy { max-width: 194px; }
+    .profile-label { display: block; color: var(--cyan); font-size: 8px; font-weight: 850; letter-spacing: .12em; }
+    .profile-name { display: block; margin-top: 2px; font-size: 12px; font-weight: 750; }
+    .profile-company { display: block; color: var(--muted); font-size: 10px; line-height: 1.3; }
+    .profile-user { display: block; margin-top: 2px; color: #b5c9e2; font-size: 10px; }
+    .page { max-width: 1400px; margin: 0 auto; padding: 26px 28px 60px; }
+    .hero { position: relative; overflow: hidden; display: flex; align-items: end; justify-content: space-between; gap: 18px; padding: 23px 25px; margin-bottom: 17px; border: 1px solid rgba(56,189,248,.2); border-radius: 16px; background: radial-gradient(ellipse at 100% 0, rgba(37,99,235,.25), transparent 50%), linear-gradient(115deg, rgba(2,132,199,.16), rgba(15,23,42,.82) 60%); }
+    .hero::after { position: absolute; top: -84px; right: 13%; width: 240px; height: 240px; border: 1px solid rgba(56,189,248,.1); border-radius: 50%; box-shadow: 0 0 0 32px rgba(56,189,248,.025), 0 0 0 64px rgba(56,189,248,.018); content: ""; pointer-events: none; }
+    .hero-copy { position: relative; z-index: 1; }
+    .hero-copy .eyebrow { margin: 0 0 5px; color: var(--cyan); font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+    .hero h2 { margin: 0; font-size: clamp(21px, 3vw, 31px); letter-spacing: -.045em; }
+    .hero p:last-child { margin: 6px 0 0; color: var(--muted); }
+    .sync-state { z-index: 1; flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+    .sync-state::before { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px rgba(52,211,153,.55); content: ""; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 17px; }
+    .metric, .panel { border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, rgba(18,32,58,.83), rgba(13,23,45,.82)); box-shadow: var(--shadow); backdrop-filter: blur(12px); }
+    .metric { display: flex; justify-content: space-between; align-items: center; padding: 15px 18px; }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric strong { color: #f4f9ff; font-size: 26px; letter-spacing: -.05em; }
+    .metric-icon { display: grid; place-items: center; width: 35px; height: 35px; border: 1px solid rgba(56,189,248,.16); border-radius: 10px; background: rgba(2,132,199,.1); color: var(--cyan); font-size: 15px; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.55fr); gap: 15px; align-items: start; }
+    .panel { min-width: 0; padding: 17px; transition: border-color .18s, transform .18s; }
+    .panel:hover { border-color: rgba(56,189,248,.2); }
+    .panel-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 14px; }
+    .panel-heading h3 { margin: 0; font-size: 15px; letter-spacing: -.015em; }
+    .panel-heading p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .panel-kicker { color: var(--cyan); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
     .ticket-list { display: grid; gap: 9px; }
-    .ticket-card { box-shadow: none; padding: 13px; text-align: left; width: 100%; color: inherit; transition: .15s ease; }
-    .ticket-card:hover { border-color: #b9c4fa; }
-    .ticket-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,102,232,.11); }
-    .ticket-top { display: flex; justify-content: space-between; gap: 9px; align-items: start; }
-    .ticket-title { display: block; font-weight: 700; }
-    .ticket-module { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
-    .ticket-description { margin: 8px 0 0; color: #59677b; font-size: 13px; overflow-wrap: anywhere; }
-    .tag { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; background: #edf0ff; color: #485bcc; font-size: 10px; font-weight: 750; white-space: nowrap; }
-    .tag.status { background: #eef8f2; color: #238352; }
-    .tag.priority-high, .tag.priority-critical { background: #fff0ed; color: #c34a34; }
-    .tag.priority-low { background: #f0f3f7; color: #657286; }
-    .ticket-tags { display: flex; gap: 6px; margin-top: 10px; }
-    .empty { padding: 24px 12px; border: 1px dashed #d7deea; border-radius: 11px; color: var(--muted); text-align: center; font-size: 13px; }
-    .notes-panel { min-width: 0; }
-    .active-module { color: var(--accent); font-size: 12px; font-weight: 700; }
-    .note-form { display: grid; gap: 10px; padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
-    textarea, input[type="text"], select { width: 100%; border: 1px solid #d9e0eb; border-radius: 9px; padding: 10px 11px; outline: none; background: white; color: var(--ink); }
-    textarea:focus, input:focus, select:focus { border-color: #8392f0; box-shadow: 0 0 0 3px rgba(77,102,232,.1); }
-    textarea { min-height: 76px; resize: vertical; }
-    .form-tools { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .form-tools label { color: var(--muted); font-size: 12px; }
-    .file-input { max-width: 100%; }
-    .notes-feed { max-height: 450px; overflow-y: auto; display: grid; gap: 11px; padding: 1px 5px 1px 1px; scrollbar-color: #bcc5d5 transparent; }
-    .note { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 13px; background: #fff; }
-    .note-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
-    .note-meta { color: var(--muted); font-size: 11px; }
-    .note-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
-    .note-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
-    .note-attachments img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid var(--line); border-radius: 8px; }
-    .note-attachments audio { width: 100%; grid-column: 1 / -1; }
-    .attachment-name { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
-    .note-delete { border: 0; padding: 5px 8px; border-radius: 7px; background: #fff2f3; color: #b42335; font-size: 11px; font-weight: 700; }
-    .note-delete:hover { background: #ffe1e4; }
-    dialog { border: 0; border-radius: 15px; width: min(520px, calc(100% - 28px)); max-height: 88vh; padding: 0; box-shadow: 0 28px 90px rgba(8,18,38,.3); }
-    dialog::backdrop { background: rgba(10,19,34,.55); backdrop-filter: blur(2px); }
-    .modal-inner { padding: 22px; }
-    .modal-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 17px; }
-    .modal-head h3 { margin: 0; font-size: 19px; }
-    .modal-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-    .close { border: 0; background: transparent; color: var(--muted); font-size: 21px; line-height: 1; }
+    .ticket-card { border: 1px solid var(--line); border-radius: 11px; padding: 12px; background: rgba(7,15,33,.54); transition: border-color .16s, background .16s, transform .16s; }
+    .ticket-card:hover { transform: translateY(-1px); border-color: rgba(56,189,248,.34); background: rgba(9,22,45,.85); }
+    .ticket-card.selected { border-color: rgba(56,189,248,.62); background: linear-gradient(120deg, rgba(2,132,199,.13), rgba(7,15,33,.72)); box-shadow: inset 2px 0 0 var(--cyan); }
+    .ticket-select { display: block; width: 100%; border: 0; padding: 0; text-align: left; background: transparent; }
+    .ticket-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+    .ticket-title { color: #edf5ff; font-size: 13px; font-weight: 750; overflow-wrap: anywhere; }
+    .ticket-id { display: inline-block; margin-bottom: 4px; color: var(--cyan); font-family: ui-monospace, "Cascadia Code", monospace; font-size: 9px; font-weight: 800; letter-spacing: .06em; }
+    .status-tag { flex: 0 0 auto; border: 1px solid rgba(52,211,153,.17); border-radius: 999px; padding: 3px 7px; color: #80edc4; background: rgba(52,211,153,.08); font-size: 9px; font-weight: 750; }
+    .ticket-description { margin: 7px 0 0; color: var(--muted); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ticket-footer { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.06); }
+    .ticket-meta { color: #7f91ac; font-size: 9px; }
+    .ticket-delete { border: 0; padding: 4px 6px; border-radius: 6px; color: #ff9aa9; background: rgba(251,113,133,.07); font-size: 10px; font-weight: 700; }
+    .ticket-delete:hover, .note-delete:hover { background: rgba(251,113,133,.16); }
+    .active-ticket { color: var(--cyan) !important; font-size: 11px !important; font-weight: 700; }
+    .note-form { display: grid; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .note-form textarea { min-height: 84px; }
+    .note-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .file-picker { min-width: 0; color: var(--muted); font-size: 10px; }
+    .file-picker input { max-width: 245px; padding: 7px; font-size: 10px; }
+    .record-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .recording-state { color: var(--red); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 800; }
+    .recording-state::before { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: currentColor; content: ""; animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: .35; } }
+    .audio-preview { width: 100%; height: 36px; }
+    .selected-files { color: #96a9c4; font-size: 10px; overflow-wrap: anywhere; }
+    .notes-feed { display: grid; max-height: 450px; gap: 10px; overflow-y: auto; padding: 1px 4px 1px 1px; scrollbar-color: #24415f transparent; }
+    .note-card { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 12px; background: rgba(7,15,33,.54); }
+    .note-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .note-author { color: #e1ecfb; font-size: 11px; font-weight: 750; }
+    .note-date { display: block; margin-top: 2px; color: #8193ad; font-size: 9px; }
+    .note-actions { display: flex; gap: 5px; flex: 0 0 auto; }
+    .note-action { border: 1px solid var(--line); border-radius: 6px; padding: 4px 7px; color: #b8c8df; background: rgba(255,255,255,.035); font-size: 9px; }
+    .note-delete { border-color: rgba(251,113,133,.14); color: #ff9aa9; }
+    .note-text { margin: 9px 0 0; color: #d2dfef; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .note-edit { margin-top: 9px; }
+    .note-edit textarea { min-height: 68px; }
+    .note-edit-actions { display: flex; justify-content: end; gap: 7px; margin-top: 7px; }
+    .attachment-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 8px; margin-top: 10px; }
+    .attachment { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); }
+    .attachment-image { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; cursor: zoom-in; }
+    .attachment-label { display: flex; justify-content: space-between; gap: 6px; align-items: center; padding: 7px; }
+    .attachment-name { min-width: 0; overflow: hidden; color: #b1c2d9; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+    .download-link { flex: 0 0 auto; color: var(--cyan); font-size: 9px; text-decoration: none; }
+    .attachment audio { display: block; width: calc(100% - 12px); margin: 7px 6px 0; }
+    .attachment-pdf { display: grid; place-items: center; min-height: 70px; color: var(--cyan); font-size: 22px; }
+    .empty { padding: 24px 12px; border: 1px dashed rgba(255,255,255,.12); border-radius: 10px; color: var(--muted); text-align: center; font-size: 11px; }
+    dialog { width: min(480px, calc(100% - 24px)); max-height: 90vh; overflow: auto; padding: 0; border: 1px solid var(--line); border-radius: 17px; color: var(--text); background: #101b32; box-shadow: 0 30px 100px rgba(0,0,0,.55); }
+    dialog::backdrop { background: rgba(3,8,21,.77); backdrop-filter: blur(5px); }
+    .dialog-inner { padding: 21px; }
+    .dialog-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    .dialog-head h3 { margin: 0; font-size: 18px; }
+    .dialog-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .close { border: 0; padding: 0 3px; color: var(--muted); background: transparent; font-size: 23px; line-height: 1; }
     .ticket-form { display: grid; gap: 12px; }
-    .field { display: grid; gap: 5px; }
-    .field span { color: #455267; font-size: 12px; font-weight: 700; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
-    .gallery-dialog { width: min(900px, calc(100% - 28px)); }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; max-height: 62vh; overflow: auto; }
-    .gallery-item { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
-    .gallery-item img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
-    .gallery-caption { padding: 9px; }
-    .gallery-caption strong { display: block; font-size: 12px; }
-    .gallery-caption span { color: var(--muted); font-size: 10px; }
-    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 5; border-radius: 10px; padding: 11px 15px; background: #142033; color: white; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
+    .preview-dialog { width: min(1000px, calc(100% - 24px)); background: #080f20; }
+    .preview-dialog .dialog-inner { padding: 12px; }
+    .preview-image { display: block; max-width: 100%; max-height: 78vh; margin: 0 auto; object-fit: contain; }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; padding: 1px 2px 10px; color: var(--muted); font-size: 11px; }
+    .delete-dialog { width: min(410px, calc(100% - 24px)); }
+    .delete-message { min-height: 18px; color: var(--red); font-size: 11px; }
+    .delete-actions { display: flex; justify-content: end; gap: 8px; }
+    .toast { position: fixed; right: 21px; bottom: 21px; z-index: 30; max-width: min(390px, calc(100vw - 32px)); border: 1px solid rgba(56,189,248,.2); border-radius: 10px; padding: 11px 14px; color: #eaf7ff; background: #12233e; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
     .toast.visible { opacity: 1; transform: translateY(0); }
-    .toast.error { background: #a52a3a; }
-    @media (max-width: 760px) {
+    .toast.error { border-color: rgba(251,113,133,.3); background: #3a1928; }
+    @media (max-width: 930px) {
       .topbar-inner { align-items: start; flex-direction: column; }
-      .actions { width: 100%; }
-      .actions .button { flex: 1; }
-      main { margin-top: 20px; padding: 0 14px; }
-      .intro { align-items: start; flex-direction: column; }
-      .metrics { gap: 8px; }
-      .metric { padding: 13px; }
-      .metric strong { font-size: 23px; }
-      .dashboard-grid { grid-template-columns: 1fr; }
+      .header-actions { justify-content: start; width: 100%; }
+      .profile-card { margin-left: auto; }
+      .dashboard-grid { grid-template-columns: minmax(250px, .8fr) minmax(0, 1.3fr); }
     }
-    @media (max-width: 430px) {
+    @media (max-width: 690px) {
+      .topbar-inner { padding: 13px 15px; }
+      .page { padding: 17px 14px 38px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .metrics { gap: 7px; }
+      .metric { padding: 11px; }
+      .metric strong { font-size: 21px; }
+      .metric-icon { display: none; }
+      .hero { align-items: start; flex-direction: column; padding: 17px; }
+      .sync-state { align-self: end; }
+      .profile-copy { max-width: 155px; }
+      .header-actions .button { flex: 1; }
+      .profile-card { width: 100%; margin: 3px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); border-left: 0; }
+      .profile-card > .button { margin-left: auto; }
+    }
+    @media (max-width: 420px) {
+      .brand-copy h1 { font-size: 14px; }
+      .brand-logo { width: 40px; height: 40px; }
+      .header-actions .button { min-height: 36px; padding: 7px 9px; font-size: 11px; }
       .metrics { grid-template-columns: 1fr; }
-      .metric { display: flex; justify-content: space-between; align-items: center; }
-      .metric strong { margin: 0; }
-      .two-col { grid-template-columns: 1fr; }
+      .metric { display: flex; }
+      .metric strong { margin-left: auto; }
+      .auth-screen { padding: 13px; }
+      .auth-brand { padding-inline: 18px; }
+      .auth-content { padding-inline: 19px; }
     }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">✓</div>
-        <div><h1>Product Testing</h1><p>Quality assurance · Audit desk</p></div>
+  <section class="auth-screen" id="auth-screen" aria-label="Sign in">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <img class="auth-logo image-fallback" src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
+        <h1>SiyanoAV Total Security</h1>
+        <p>Secure audit &amp; diagnostic workspace</p>
       </div>
-      <nav class="actions" aria-label="Dashboard actions">
-        <button class="button primary" id="new-ticket-button">＋ New Ticket</button>
-        <button class="button dark-secondary" id="sync-button">🔄 Sync Notes</button>
-        <button class="button dark-secondary" id="gallery-button">🖼️ View Gallery</button>
-      </nav>
-    </div>
-  </header>
-  <main>
-    <section class="intro">
-      <div><p class="eyebrow">Workspace / Audit overview</p><h2>Testing &amp; audit tickets</h2><p>Track module reviews, evidence, and findings in one place.</p></div>
-      <div class="sync-state" id="sync-state" aria-live="polite">Connecting…</div>
-    </section>
-    <section class="metrics" aria-label="Ticket metrics">
-      <div class="metric"><span class="metric-label">Total tickets</span><strong id="total-count">0</strong></div>
-      <div class="metric"><span class="metric-label">Open audits</span><strong id="open-count">0</strong></div>
-      <div class="metric"><span class="metric-label">Resolved</span><strong id="resolved-count">0</strong></div>
-    </section>
-    <div class="dashboard-grid">
-      <section class="panel">
-        <div class="panel-heading"><div><h3>Module tickets</h3><p>Select a ticket to review its audit log.</p></div></div>
-        <div class="ticket-list" id="ticket-list"><div class="empty">Loading tickets…</div></div>
-      </section>
-      <section class="panel notes-panel">
-        <div class="panel-heading">
-          <div><h3>Audit Notes &amp; Evidence Log</h3><p id="active-module" class="active-module">Select a module ticket</p></div>
-        </div>
-        <form class="note-form" id="note-form">
-          <textarea id="note-text" maxlength="10000" placeholder="Add an audit note or testing observation…" aria-label="Audit note"></textarea>
-          <div class="form-tools">
-            <label>Attach images or audio <input class="file-input" id="attachment-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,audio/webm,audio/ogg,audio/wav,audio/mpeg" multiple></label>
-            <button class="button primary" type="submit" id="save-note-button">Add note</button>
-          </div>
+      <div class="auth-tabs" role="tablist" aria-label="Account options">
+        <button class="auth-tab active" type="button" role="tab" aria-selected="true" data-auth-tab="signin">Sign In</button>
+        <button class="auth-tab" type="button" role="tab" aria-selected="false" data-auth-tab="add-user">＋ Add User</button>
+        <button class="auth-tab" type="button" role="tab" aria-selected="false" data-auth-tab="reset">Reset Users</button>
+      </div>
+      <div class="auth-content">
+        <form class="form-stack" id="signin-form" data-auth-panel="signin">
+          <div><h2>Welcome back</h2><p>Sign in to access the audit workspace.</p></div>
+          <div class="field"><label for="signin-username">Username</label><input id="signin-username" name="username" autocomplete="username" value="Admin" required></div>
+          <div class="field"><label for="signin-password">Password</label><input id="signin-password" name="password" type="password" autocomplete="current-password" required></div>
+          <button class="button primary block" type="submit">Sign in securely</button>
+          <div class="auth-message" id="signin-message" aria-live="polite"></div>
         </form>
-        <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes.</div></div>
-      </section>
+        <form class="form-stack" id="add-user-form" data-auth-panel="add-user" hidden>
+          <div><h2>Add an auditor or engineer</h2><p>Verify an existing account to authorize a new user.</p></div>
+          <div class="field"><label for="verify-username">Your username</label><input id="verify-username" name="currentUsername" autocomplete="username" required></div>
+          <div class="field"><label for="verify-password">Your password</label><input id="verify-password" name="currentPassword" type="password" autocomplete="current-password" required></div>
+          <div class="field"><label for="new-username">New user's username</label><input id="new-username" name="newUsername" autocomplete="off" minlength="2" maxlength="40" required></div>
+          <div class="field"><label for="new-password">New user's password (8+ characters)</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+          <button class="button primary block" type="submit">Verify &amp; create account</button>
+          <div class="auth-message" id="add-user-message" aria-live="polite"></div>
+        </form>
+        <form class="form-stack" id="reset-form" data-auth-panel="reset" hidden>
+          <div><h2>Restore the default administrator</h2><p>This replaces every account and invalidates existing sessions.</p></div>
+          <div class="field"><label for="reset-master-password">Master password</label><input id="reset-master-password" name="masterPassword" type="password" autocomplete="current-password" required></div>
+          <button class="button danger block" type="submit">Reset all users</button>
+          <div class="auth-message" id="reset-message" aria-live="polite"></div>
+          <div class="note-hint">The default sign-in is restored as Admin. Change shared credentials according to your deployment policy.</div>
+        </form>
+      </div>
     </div>
-  </main>
+  </section>
+
+  <div class="app-shell" id="app-shell" hidden>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img class="brand-logo image-fallback" src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
+          <div class="brand-copy">
+            <p class="eyebrow">Sentinel Genesis Technologies</p>
+            <h1>SiyanoAV Total Security</h1>
+            <p>Audit &amp; Diagnostic Report · Quality assurance desk</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
+          <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
+          <div class="profile-card">
+            <img class="avatar image-fallback" src="/images/director.png" alt="Sanjay Ghelani, Founder and Director">
+            <div class="profile-copy">
+              <span class="profile-label">REPORT AUDITOR &amp; AUTHOR</span>
+              <span class="profile-name">Sanjay Ghelani</span>
+              <span class="profile-company">Sentinel Genesis Technologies Pvt Ltd</span>
+              <span class="profile-user">Signed in as <strong id="signed-in-user"></strong></span>
+            </div>
+            <button class="button ghost small" id="logout-button" type="button">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="page">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Security assessment · Internal workspace</p>
+          <h2>SiyanoAV Total Security — Audit &amp; Diagnostic Report</h2>
+          <p>Record technical concerns, findings, remediation notes, and evidence.</p>
+        </div>
+        <div class="sync-state" id="sync-state" aria-live="polite">Connected</div>
+      </section>
+      <section class="metrics" aria-label="Audit metrics">
+        <article class="metric"><div><span class="metric-label">Total concerns</span><strong id="total-count">0</strong></div><span class="metric-icon">▤</span></article>
+        <article class="metric"><div><span class="metric-label">Open concerns</span><strong id="open-count">0</strong></div><span class="metric-icon">⌁</span></article>
+        <article class="metric"><div><span class="metric-label">Audit notes</span><strong id="note-count">0</strong></div><span class="metric-icon">◷</span></article>
+      </section>
+      <div class="dashboard-grid">
+        <section class="panel">
+          <div class="panel-heading">
+            <div><span class="panel-kicker">Issue register</span><h3>Core Technical Concerns</h3><p>Select a ticket to inspect its evidence log.</p></div>
+          </div>
+          <div class="ticket-list" id="ticket-list"><div class="empty">Loading concerns…</div></div>
+        </section>
+        <section class="panel">
+          <div class="panel-heading">
+            <div><span class="panel-kicker">Evidence &amp; observations</span><h3>Audit Notes &amp; Evidence Log</h3><p class="active-ticket" id="active-ticket-label">Select a ticket to view its audit notes.</p></div>
+          </div>
+          <form class="note-form" id="note-form">
+            <textarea id="note-text" maxlength="10000" placeholder="Record an observation, test result, or remediation note…" aria-label="Audit note text"></textarea>
+            <div class="note-tools">
+              <label class="file-picker">Attach images or PDF <input id="attachment-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" multiple></label>
+              <div class="record-controls">
+                <button class="button ghost small" id="record-button" type="button">● Record voice note</button>
+                <span class="recording-state" id="recording-timer" hidden>00:00</span>
+                <button class="button primary small" id="save-note-button" type="submit">Save Note</button>
+              </div>
+            </div>
+            <div class="selected-files" id="selected-files"></div>
+            <audio class="audio-preview" id="audio-preview" controls hidden></audio>
+          </form>
+          <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
+        </section>
+      </div>
+    </main>
+  </div>
 
   <dialog id="ticket-dialog">
-    <div class="modal-inner">
-      <div class="modal-head"><div><h3>Create a ticket</h3><p>Add a module testing or audit item.</p></div><button class="close" type="button" data-close="ticket-dialog" aria-label="Close">×</button></div>
+    <div class="dialog-inner">
+      <div class="dialog-head"><div><h3>Create a technical concern</h3><p>New tickets are assigned an ID, timestamp, author, and Open status.</p></div><button class="close" type="button" data-close="ticket-dialog" aria-label="Close dialog">×</button></div>
       <form class="ticket-form" id="ticket-form">
-        <label class="field"><span>Module ID</span><input name="moduleId" type="text" maxlength="100" placeholder="e.g. checkout-v2" required></label>
-        <label class="field"><span>Ticket title</span><input name="title" type="text" maxlength="200" placeholder="e.g. Validate payment failure states" required></label>
-        <label class="field"><span>Description</span><textarea name="description" maxlength="5000" placeholder="Testing scope, expected behavior, or audit context…"></textarea></label>
-        <div class="two-col">
-          <label class="field"><span>Status</span><select name="status"><option>Open</option><option>In Progress</option><option>Resolved</option></select></label>
-          <label class="field"><span>Priority</span><select name="priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></label>
-        </div>
+        <div class="field"><label for="ticket-title">Title of Issue</label><input id="ticket-title" name="title" maxlength="200" required placeholder="Summarize the technical concern"></div>
+        <div class="field"><label for="ticket-description">Description</label><textarea id="ticket-description" name="description" maxlength="10000" required placeholder="Describe the observed behavior, impact, and context…"></textarea></div>
         <button class="button primary" type="submit">Create ticket</button>
       </form>
     </div>
   </dialog>
-  <dialog class="gallery-dialog" id="gallery-dialog">
-    <div class="modal-inner">
-      <div class="modal-head"><div><h3>Evidence gallery</h3><p>Uploaded image evidence from every module.</p></div><button class="close" type="button" data-close="gallery-dialog" aria-label="Close">×</button></div>
-      <div class="gallery-grid" id="gallery-grid"><div class="empty">Loading evidence…</div></div>
+  <dialog class="preview-dialog" id="image-dialog">
+    <div class="dialog-inner">
+      <div class="preview-head"><span id="preview-name">Evidence preview</span><button class="close" type="button" data-close="image-dialog" aria-label="Close preview">×</button></div>
+      <img class="preview-image" id="preview-image" alt="Full-resolution audit evidence">
+    </div>
+  </dialog>
+  <dialog class="delete-dialog" id="delete-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-head"><div><h3 id="delete-title">Confirm deletion</h3><p>Enter the master password to continue.</p></div><button class="close" type="button" data-close="delete-dialog" aria-label="Close dialog">×</button></div>
+      <form class="form-stack" id="delete-form">
+        <div class="field"><label for="delete-password">Master password</label><input id="delete-password" type="password" autocomplete="current-password" required></div>
+        <div class="delete-message" id="delete-message" role="alert" aria-live="assertive"></div>
+        <div class="delete-actions"><button class="button ghost small" type="button" data-close="delete-dialog">Cancel</button><button class="button danger small" type="submit">Confirm delete</button></div>
+      </form>
     </div>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
   <script>
-    const state = { tickets: [], activeModuleId: null };
+    let currentTicketId = null;
+    let tickets = [];
+    let currentUser = null;
+    let accessToken = sessionStorage.getItem('auditToken');
+    let pollTimer = null;
+    let toastTimer = null;
+    let mediaRecorder = null;
+    let recordingStream = null;
+    let recordingChunks = [];
+    let recordingStartedAt = 0;
+    let recordingTimer = null;
+    let recordedAudio = null;
+    let recordedAudioUrl = null;
+    let noteRenderVersion = 0;
+    let noteSnapshot = null;
+    let attachmentObjectUrls = [];
+    let previewObjectUrl = null;
+    let resolveDeletionPrompt = null;
+
+    const authScreen = document.getElementById('auth-screen');
+    const appShell = document.getElementById('app-shell');
     const ticketList = document.getElementById('ticket-list');
     const notesFeed = document.getElementById('notes-feed');
-    const toast = document.getElementById('toast');
-    let toastTimer;
+    const fallbackImage = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g"><stop stop-color="#0284c7"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect width="100" height="100" rx="18" fill="#0f172a"/><path d="M50 13 79 24v23c0 20-13 33-29 41C34 80 21 67 21 47V24z" fill="url(#g)"/><path d="m36 50 9 9 20-22" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`;
+
+    document.querySelectorAll('.image-fallback').forEach((image) => {
+      image.addEventListener('error', () => {
+        image.src = fallbackImage;
+        image.classList.remove('image-fallback');
+      }, { once: true });
+    });
 
     function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.classList.toggle('error', isError);
       toast.classList.add('visible');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2800);
     }
 
     async function api(url, options = {}) {
-      const response = await fetch(url, options);
+      const headers = new Headers(options.headers || {});
+      if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+      const response = await fetch(url, { ...options, headers });
       if (!response.ok) {
         let message = `Request failed (${response.status})`;
         try { message = (await response.json()).error || message; } catch {}
+        if (response.status === 401 && accessToken) signOut(false);
         throw new Error(message);
       }
-      return response.status === 204 ? null : response.json();
+      if (response.status === 204) return null;
+      return response.json();
     }
 
-    function makeTag(text, className = '') {
-      const tag = document.createElement('span');
-      tag.className = `tag ${className}`.trim();
-      tag.textContent = text;
-      return tag;
+    async function apiBlob(url) {
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!response.ok) {
+        if (response.status === 401) signOut(false);
+        throw new Error(`Could not load attachment (${response.status}).`);
+      }
+      return response.blob();
+    }
+
+    function setAuthTab(name) {
+      document.querySelectorAll('[data-auth-tab]').forEach((tab) => {
+        const active = tab.dataset.authTab === name;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('[data-auth-panel]').forEach((panel) => {
+        panel.hidden = panel.dataset.authPanel !== name;
+      });
+    }
+
+    document.querySelectorAll('[data-auth-tab]').forEach((tab) => {
+      tab.addEventListener('click', () => setAuthTab(tab.dataset.authTab));
+    });
+
+    function enterWorkspace(user, token) {
+      accessToken = token;
+      currentUser = user;
+      sessionStorage.setItem('auditToken', token);
+      sessionStorage.setItem('auditUser', JSON.stringify(user));
+      document.getElementById('signed-in-user').textContent = user.username;
+      authScreen.hidden = true;
+      appShell.hidden = false;
+      if (pollTimer) clearInterval(pollTimer);
+      loadTickets().catch((error) => showToast(error.message, true));
+      pollTimer = setInterval(() => {
+        loadAuditNotesFromApi().catch((error) => showToast(error.message, true));
+      }, 5000);
+    }
+
+    function signOut(showMessage = true) {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = null;
+      accessToken = null;
+      currentUser = null;
+      currentTicketId = null;
+      sessionStorage.removeItem('auditToken');
+      sessionStorage.removeItem('auditUser');
+      appShell.hidden = true;
+      authScreen.hidden = false;
+      revokeAttachmentUrls();
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = null;
+      document.getElementById('signin-form').reset();
+      document.getElementById('signin-username').value = 'Admin';
+      document.getElementById('signin-message').textContent = '';
+      resetAudioDraft();
+      if (showMessage) showToast('You have been signed out.');
+    }
+
+    document.getElementById('signin-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const message = document.getElementById('signin-message');
+      message.textContent = '';
+      try {
+        const result = await api('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: form.get('username'), password: form.get('password') }),
+        });
+        enterWorkspace(result.user, result.token);
+      } catch (error) { message.textContent = error.message; }
+    });
+
+    document.getElementById('add-user-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const form = new FormData(formElement);
+      const message = document.getElementById('add-user-message');
+      message.textContent = '';
+      try {
+        const login = await api('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: form.get('currentUsername'), password: form.get('currentPassword') }),
+        });
+        accessToken = login.token;
+        const created = await api('/api/auth/add-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: form.get('newUsername'), password: form.get('newPassword') }),
+        });
+        formElement.reset();
+        enterWorkspace(login.user, login.token);
+        showToast(`Account ${created.username} created.`);
+      } catch (error) {
+        accessToken = null;
+        message.textContent = error.message;
+      }
+    });
+
+    document.getElementById('reset-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formElement = event.currentTarget;
+      const message = document.getElementById('reset-message');
+      message.textContent = '';
+      try {
+        const password = new FormData(formElement).get('masterPassword');
+        await api('/api/auth/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ masterPassword: password }),
+        });
+        formElement.reset();
+        setAuthTab('signin');
+        document.getElementById('signin-username').value = 'Admin';
+        document.getElementById('signin-message').textContent = 'User list reset. Sign in using the default administrator credentials.';
+      } catch (error) { message.textContent = error.message; }
+    });
+
+    function ticketIsSelected(id) {
+      return currentTicketId === id;
     }
 
     function renderTickets() {
-      document.getElementById('total-count').textContent = state.tickets.length;
-      document.getElementById('open-count').textContent = state.tickets.filter((ticket) => ticket.status !== 'Resolved').length;
-      document.getElementById('resolved-count').textContent = state.tickets.filter((ticket) => ticket.status === 'Resolved').length;
+      document.getElementById('total-count').textContent = tickets.length;
+      document.getElementById('open-count').textContent = tickets.filter((ticket) => ticket.status === 'Open').length;
       ticketList.replaceChildren();
-      if (!state.tickets.length) {
-        ticketList.innerHTML = '<div class="empty">No tickets yet. Create one to start an audit.</div>';
+      if (!tickets.length) {
+        ticketList.innerHTML = '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
+        document.getElementById('note-count').textContent = '0';
+        notesFeed.innerHTML = '<div class="empty">Create a ticket to start its evidence log.</div>';
+        currentTicketId = null;
+        document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
         return;
       }
-      for (const ticket of [...state.tickets].reverse()) {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = `ticket-card${state.activeModuleId === ticket.moduleId ? ' selected' : ''}`;
-        const top = document.createElement('div');
-        top.className = 'ticket-top';
+      for (const ticket of [...tickets].reverse()) {
+        const card = document.createElement('article');
+        card.className = `ticket-card${ticketIsSelected(ticket.id) ? ' selected' : ''}`;
+        const select = document.createElement('button');
+        select.type = 'button';
+        select.className = 'ticket-select';
+        select.setAttribute('aria-label', `Select ${ticket.id}: ${ticket.title}`);
+        const head = document.createElement('div');
+        head.className = 'ticket-head';
         const titleGroup = document.createElement('span');
+        const id = document.createElement('span');
+        id.className = 'ticket-id';
+        id.textContent = ticket.id;
         const title = document.createElement('span');
         title.className = 'ticket-title';
         title.textContent = ticket.title;
-        const module = document.createElement('span');
-        module.className = 'ticket-module';
-        module.textContent = `Module · ${ticket.moduleId}`;
-        titleGroup.append(title, module);
-        top.append(titleGroup, makeTag(ticket.status, 'status'));
-        card.append(top);
-        if (ticket.description) {
-          const description = document.createElement('p');
-          description.className = 'ticket-description';
-          description.textContent = ticket.description;
-          card.append(description);
-        }
-        const tags = document.createElement('div');
-        tags.className = 'ticket-tags';
-        tags.append(makeTag(ticket.priority, `priority-${ticket.priority.toLowerCase()}`));
-        card.append(tags);
-        card.addEventListener('click', () => selectModule(ticket.moduleId));
+        titleGroup.append(id, document.createElement('br'), title);
+        const status = document.createElement('span');
+        status.className = 'status-tag';
+        status.textContent = ticket.status || 'Open';
+        head.append(titleGroup, status);
+        const description = document.createElement('p');
+        description.className = 'ticket-description';
+        description.textContent = ticket.description;
+        select.append(head, description);
+        select.addEventListener('click', () => selectTicket(ticket.id));
+        const footer = document.createElement('div');
+        footer.className = 'ticket-footer';
+        const meta = document.createElement('span');
+        meta.className = 'ticket-meta';
+        meta.textContent = `${ticket.author || 'Unknown author'} · ${new Date(ticket.createdAt).toLocaleDateString()}`;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'ticket-delete';
+        remove.textContent = 'Delete Ticket';
+        remove.addEventListener('click', () => deleteTicket(ticket.id));
+        footer.append(meta, remove);
+        card.append(select, footer);
         ticketList.append(card);
       }
     }
 
     async function loadTickets() {
-      state.tickets = await api('/api/tickets');
+      const loaded = await api('/api/tickets');
+      tickets = loaded;
+      if (currentTicketId && !tickets.some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
       renderTickets();
-      if (!state.activeModuleId && state.tickets.length) await selectModule(state.tickets[state.tickets.length - 1].moduleId);
+      if (!currentTicketId && tickets.length) await selectTicket(tickets[tickets.length - 1].id);
     }
 
-    async function loadAuditNotesFromApi() {
-      if (!state.activeModuleId) return;
-      const moduleId = encodeURIComponent(state.activeModuleId);
-      const notes = await api(`/api/notes/${moduleId}`);
-      renderNotes(notes);
-      document.getElementById('sync-state').textContent = `Last synced ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-    }
-
-    async function selectModule(moduleId) {
-      state.activeModuleId = moduleId;
-      document.getElementById('active-module').textContent = `Module · ${moduleId}`;
+    async function selectTicket(ticketId) {
+      currentTicketId = ticketId;
+      noteSnapshot = null;
+      const ticket = tickets.find((entry) => entry.id === ticketId);
+      document.getElementById('active-ticket-label').textContent = ticket ? `${ticket.id} · ${ticket.title}` : '';
       renderTickets();
       notesFeed.innerHTML = '<div class="empty">Loading audit notes…</div>';
       try { await loadAuditNotesFromApi(); }
       catch (error) { showToast(error.message, true); }
     }
 
-    function renderNotes(notes) {
-      notesFeed.replaceChildren();
-      if (!notes.length) {
-        notesFeed.innerHTML = '<div class="empty">No notes yet for this module. Add the first audit observation above.</div>';
-        return;
+    async function loadAuditNotesFromApi() {
+      const ticketId = currentTicketId;
+      if (!ticketId || appShell.hidden || !accessToken) return;
+      const notes = await api(`/api/notes/${encodeURIComponent(ticketId)}`);
+      if (ticketId !== currentTicketId) return;
+      document.getElementById('note-count').textContent = notes.length;
+      const snapshot = JSON.stringify(notes);
+      if (snapshot !== noteSnapshot) {
+        noteSnapshot = snapshot;
+        await renderNotes(notes, ticketId);
       }
-      for (const note of [...notes].reverse()) {
-        const article = document.createElement('article');
-        article.className = 'note';
-        const head = document.createElement('div');
-        head.className = 'note-head';
-        const date = document.createElement('span');
-        date.className = 'note-meta';
-        date.textContent = new Date(note.createdAt).toLocaleString();
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'note-delete';
-        remove.textContent = '🗑️ Delete Note';
-        remove.addEventListener('click', () => deleteNote(note.id));
-        head.append(date, remove);
-        article.append(head);
-        if (note.text) {
-          const text = document.createElement('p');
-          text.className = 'note-text';
-          text.textContent = note.text;
-          article.append(text);
-        }
-        if (note.attachments && note.attachments.length) {
-          const attachments = document.createElement('div');
-          attachments.className = 'note-attachments';
-          for (const attachment of note.attachments) {
-            if (attachment.mimeType.startsWith('image/')) {
-              const figure = document.createElement('div');
-              const image = document.createElement('img');
-              image.src = attachment.url;
-              image.alt = attachment.name || 'Audit evidence';
-              image.loading = 'lazy';
-              const caption = document.createElement('span');
-              caption.className = 'attachment-name';
-              caption.textContent = attachment.name;
-              figure.append(image, caption);
-              attachments.append(figure);
-            } else if (attachment.mimeType.startsWith('audio/')) {
-              const audio = document.createElement('audio');
-              audio.controls = true;
-              audio.preload = 'none';
-              audio.src = attachment.url;
-              audio.setAttribute('aria-label', attachment.name || 'Audit audio attachment');
-              attachments.append(audio);
-            }
-          }
-          article.append(attachments);
-        }
-        notesFeed.append(article);
-      }
+      document.getElementById('sync-state').textContent = `Synced · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     }
 
-    async function deleteNote(noteId) {
-      const password = window.prompt('Enter Master Password to delete:');
-      if (password !== 'cat123123') {
-        window.alert('Incorrect Master Password. Access Denied.');
+    function revokeAttachmentUrls() {
+      for (const url of attachmentObjectUrls) URL.revokeObjectURL(url);
+      attachmentObjectUrls = [];
+    }
+
+    function makeAttachmentUrl(fileName) {
+      return apiBlob(`/api/uploads/${encodeURIComponent(fileName)}`).then((blob) => {
+        const url = URL.createObjectURL(blob);
+        attachmentObjectUrls.push(url);
+        return url;
+      });
+    }
+
+    async function renderNotes(notes, ticketId) {
+      const version = ++noteRenderVersion;
+      revokeAttachmentUrls();
+      notesFeed.replaceChildren();
+      if (!notes.length) {
+        notesFeed.innerHTML = '<div class="empty">No notes yet. Add an observation, evidence file, or voice note above.</div>';
         return;
       }
+      const pendingAttachments = [];
+      for (const note of [...notes].reverse()) {
+        const card = document.createElement('article');
+        card.className = 'note-card';
+        const head = document.createElement('div');
+        head.className = 'note-head';
+        const byline = document.createElement('div');
+        const author = document.createElement('span');
+        author.className = 'note-author';
+        author.textContent = note.author || 'Auditor';
+        const date = document.createElement('time');
+        date.className = 'note-date';
+        date.dateTime = note.updatedAt || note.createdAt;
+        date.textContent = `${new Date(note.createdAt).toLocaleString()}${note.updatedAt !== note.createdAt ? ' · edited' : ''}`;
+        byline.append(author, date);
+        const actions = document.createElement('div');
+        actions.className = 'note-actions';
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'note-action';
+        edit.textContent = 'Edit Note';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'note-action note-delete';
+        remove.textContent = 'Delete';
+        edit.addEventListener('click', () => beginNoteEdit(card, note));
+        remove.addEventListener('click', () => deleteNote(note.id));
+        actions.append(edit, remove);
+        head.append(byline, actions);
+        card.append(head);
+        const text = document.createElement('p');
+        text.className = 'note-text';
+        text.textContent = note.text;
+        card.append(text);
+        if (note.attachments && note.attachments.length) {
+          const list = document.createElement('div');
+          list.className = 'attachment-list';
+          card.append(list);
+          for (const attachment of note.attachments) {
+            pendingAttachments.push((async () => {
+              const url = await makeAttachmentUrl(attachment.fileName);
+              if (version !== noteRenderVersion || ticketId !== currentTicketId) {
+                URL.revokeObjectURL(url);
+                return;
+              }
+              const item = document.createElement('div');
+              item.className = 'attachment';
+              if (attachment.mimeType.startsWith('image/')) {
+                const image = document.createElement('img');
+                image.className = 'attachment-image';
+                image.src = url;
+                image.alt = attachment.name || 'Audit evidence';
+                image.addEventListener('click', () => openImagePreview(attachment.fileName, attachment.name));
+                item.append(image);
+              } else if (attachment.mimeType.startsWith('audio/')) {
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.preload = 'none';
+                audio.src = url;
+                audio.setAttribute('aria-label', attachment.name || 'Voice note');
+                item.append(audio);
+              } else {
+                const pdf = document.createElement('div');
+                pdf.className = 'attachment-pdf';
+                pdf.textContent = 'PDF';
+                item.append(pdf);
+              }
+              const label = document.createElement('div');
+              label.className = 'attachment-label';
+              const name = document.createElement('span');
+              name.className = 'attachment-name';
+              name.textContent = attachment.name || 'Attachment';
+              const download = document.createElement('a');
+              download.className = 'download-link';
+              download.href = url;
+              download.download = attachment.name || 'audit-attachment';
+              download.textContent = 'Download';
+              label.append(name, download);
+              item.append(label);
+              list.append(item);
+            })());
+          }
+        }
+        notesFeed.append(card);
+      }
+      await Promise.all(pendingAttachments);
+    }
+
+    async function openImagePreview(fileName, name) {
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = null;
       try {
-        await api(`/api/notes/${encodeURIComponent(noteId)}`, {
-          method: 'DELETE',
-          headers: { 'x-master-password': 'cat123123' },
-        });
-        await loadAuditNotesFromApi();
-        showToast('Note deleted.');
+        const blob = await apiBlob(`/api/uploads/${encodeURIComponent(fileName)}`);
+        previewObjectUrl = URL.createObjectURL(blob);
+        document.getElementById('preview-name').textContent = name || 'Evidence preview';
+        document.getElementById('preview-image').src = previewObjectUrl;
+        document.getElementById('image-dialog').showModal();
       } catch (error) { showToast(error.message, true); }
     }
 
-    function fileAsDataUrl(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ name: file.name, data: reader.result });
-        reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
-        reader.readAsDataURL(file);
+    function beginNoteEdit(card, note) {
+      if (card.querySelector('.note-edit')) return;
+      const editor = document.createElement('div');
+      editor.className = 'note-edit';
+      const textarea = document.createElement('textarea');
+      textarea.maxLength = 10000;
+      textarea.value = note.text || '';
+      textarea.setAttribute('aria-label', 'Edit audit note');
+      const buttons = document.createElement('div');
+      buttons.className = 'note-edit-actions';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'button ghost small';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => editor.remove());
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.className = 'button primary small';
+      save.textContent = 'Save changes';
+      save.addEventListener('click', async () => {
+        save.disabled = true;
+        try {
+          await api(`/api/notes/${encodeURIComponent(note.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textarea.value }),
+          });
+          await loadAuditNotesFromApi();
+          showToast('Note updated.');
+        } catch (error) {
+          showToast(error.message, true);
+          save.disabled = false;
+        }
       });
+      buttons.append(cancel, save);
+      editor.append(textarea, buttons);
+      card.append(editor);
+      textarea.focus();
+    }
+
+    function askForMasterPassword(itemType) {
+      return new Promise((resolve) => {
+        resolveDeletionPrompt = resolve;
+        document.getElementById('delete-title').textContent = `Delete ${itemType}`;
+        document.getElementById('delete-message').textContent = '';
+        document.getElementById('delete-password').value = '';
+        document.getElementById('delete-dialog').showModal();
+        document.getElementById('delete-password').focus();
+      });
+    }
+
+    async function deleteNote(noteId) {
+      const password = await askForMasterPassword('audit note');
+      if (!password) return;
+      try {
+        await api(`/api/notes/${encodeURIComponent(noteId)}`, {
+          method: 'DELETE',
+          headers: { 'x-master-password': password },
+        });
+        await loadAuditNotesFromApi();
+        showToast('Note and its attachments deleted.');
+      } catch (error) { showToast(error.message, true); }
+    }
+
+    async function deleteTicket(ticketId) {
+      const password = await askForMasterPassword('ticket and associated evidence');
+      if (!password) return;
+      try {
+        await api(`/api/tickets/${encodeURIComponent(ticketId)}`, {
+          method: 'DELETE',
+          headers: { 'x-master-password': password },
+        });
+        tickets = tickets.filter((ticket) => ticket.id !== ticketId);
+        if (currentTicketId === ticketId) currentTicketId = null;
+        renderTickets();
+        if (tickets.length) await selectTicket(tickets[tickets.length - 1].id);
+        showToast('Ticket, notes, and associated files deleted.');
+      } catch (error) { showToast(error.message, true); }
     }
 
     document.getElementById('note-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!state.activeModuleId) {
-        showToast('Select a module ticket first.', true);
+      if (!currentTicketId) {
+        showToast('Select a ticket before saving an audit note.', true);
         return;
       }
       const button = document.getElementById('save-note-button');
       button.disabled = true;
       try {
+        const data = new FormData();
+        data.append('ticketId', currentTicketId);
+        data.append('text', document.getElementById('note-text').value);
         const files = [...document.getElementById('attachment-input').files];
-        if (files.some((file) => file.size > 10 * 1024 * 1024)) throw new Error('Each attachment must be 10 MB or smaller.');
-        const attachments = await Promise.all(files.map(fileAsDataUrl));
-        await api(`/api/notes/${encodeURIComponent(state.activeModuleId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: document.getElementById('note-text').value, attachments }),
-        });
+        if (files.length + (recordedAudio ? 1 : 0) > 8) throw new Error('Attach no more than 8 files to one note.');
+        for (const file of files) data.append('attachments', file, file.name);
+        if (recordedAudio) data.append('attachments', recordedAudio, `voice-note-${Date.now()}.webm`);
+        await api('/api/notes', { method: 'POST', body: data });
         document.getElementById('note-form').reset();
+        resetAudioDraft();
+        document.getElementById('selected-files').textContent = '';
         await loadAuditNotesFromApi();
-        showToast('Audit note added.');
+        showToast('Audit note saved.');
       } catch (error) { showToast(error.message, true); }
       finally { button.disabled = false; }
     });
 
+    document.getElementById('attachment-input').addEventListener('change', (event) => {
+      const files = [...event.target.files];
+      document.getElementById('selected-files').textContent = files.length
+        ? files.map((file) => `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`).join(' · ')
+        : '';
+    });
+
     document.getElementById('ticket-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const form = new FormData(event.currentTarget);
+      const formElement = event.currentTarget;
+      const data = new FormData(formElement);
       try {
         const ticket = await api('/api/tickets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.fromEntries(form.entries())),
+          body: JSON.stringify({ title: data.get('title'), description: data.get('description') }),
         });
-        state.tickets.push(ticket);
+        tickets.push(ticket);
+        currentTicketId = ticket.id;
         renderTickets();
+        formElement.reset();
         document.getElementById('ticket-dialog').close();
-        event.currentTarget.reset();
-        await selectModule(ticket.moduleId);
-        showToast('Ticket created.');
+        await selectTicket(ticket.id);
+        showToast(`${ticket.id} created.`);
       } catch (error) { showToast(error.message, true); }
     });
 
@@ -415,44 +861,86 @@
     document.getElementById('sync-button').addEventListener('click', async () => {
       try {
         await loadTickets();
-        if (state.activeModuleId) await loadAuditNotesFromApi();
+        if (currentTicketId) await loadAuditNotesFromApi();
+        document.getElementById('sync-state').textContent = `Synced · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
         showToast('Synced!');
       } catch (error) { showToast(error.message, true); }
     });
-    document.getElementById('gallery-button').addEventListener('click', async () => {
-      const dialog = document.getElementById('gallery-dialog');
-      const grid = document.getElementById('gallery-grid');
-      grid.innerHTML = '<div class="empty">Loading evidence…</div>';
-      dialog.showModal();
-      try {
-        const gallery = await api('/api/gallery');
-        grid.replaceChildren();
-        if (!gallery.length) {
-          grid.innerHTML = '<div class="empty">No image evidence has been uploaded yet.</div>';
-          return;
-        }
-        for (const item of [...gallery].reverse()) {
-          const card = document.createElement('div');
-          card.className = 'gallery-item';
-          const image = document.createElement('img');
-          image.src = item.url;
-          image.alt = item.name || 'Audit evidence';
-          image.loading = 'lazy';
-          const caption = document.createElement('div');
-          caption.className = 'gallery-caption';
-          const module = document.createElement('strong');
-          module.textContent = item.moduleId;
-          const note = document.createElement('span');
-          note.textContent = item.text || new Date(item.createdAt).toLocaleDateString();
-          caption.append(module, note);
-          card.append(image, caption);
-          grid.append(card);
-        }
-      } catch (error) {
-        grid.innerHTML = '';
-        showToast(error.message, true);
+    document.getElementById('logout-button').addEventListener('click', () => signOut());
+
+    async function toggleRecording() {
+      const button = document.getElementById('record-button');
+      const timer = document.getElementById('recording-timer');
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        button.disabled = true;
+        mediaRecorder.stop();
+        return;
       }
-    });
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        showToast('Audio recording is not supported in this browser.', true);
+        return;
+      }
+      try {
+        recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const preferredType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((type) => MediaRecorder.isTypeSupported(type));
+        const recorder = preferredType ? new MediaRecorder(recordingStream, { mimeType: preferredType }) : new MediaRecorder(recordingStream);
+        mediaRecorder = recorder;
+        recordingChunks = [];
+        recorder.addEventListener('dataavailable', (event) => {
+          if (event.data.size) recordingChunks.push(event.data);
+        });
+        recorder.addEventListener('stop', () => {
+          if (mediaRecorder !== recorder) return;
+          recordedAudio = new Blob(recordingChunks, { type: recorder.mimeType || 'audio/webm' });
+          if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+          recordedAudioUrl = URL.createObjectURL(recordedAudio);
+          const preview = document.getElementById('audio-preview');
+          preview.src = recordedAudioUrl;
+          preview.hidden = false;
+          document.getElementById('selected-files').textContent = 'Voice note ready to save.';
+          if (recordingStream) recordingStream.getTracks().forEach((track) => track.stop());
+          recordingStream = null;
+          mediaRecorder = null;
+          clearInterval(recordingTimer);
+          timer.hidden = true;
+          button.disabled = false;
+          button.textContent = '● Record again';
+          showToast('Voice note ready. Save the note to upload it.');
+        }, { once: true });
+        recordingStartedAt = Date.now();
+        timer.hidden = false;
+        timer.textContent = '00:00';
+        recordingTimer = setInterval(() => {
+          const seconds = Math.floor((Date.now() - recordingStartedAt) / 1000);
+          timer.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        }, 250);
+        recorder.start();
+        button.textContent = '■ Stop & attach';
+      } catch (error) {
+        if (recordingStream) recordingStream.getTracks().forEach((track) => track.stop());
+        recordingStream = null;
+        showToast(`Could not start microphone recording: ${error.message}`, true);
+      }
+    }
+
+    function resetAudioDraft() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+      if (recordingStream) recordingStream.getTracks().forEach((track) => track.stop());
+      recordingStream = null;
+      mediaRecorder = null;
+      recordingChunks = [];
+      recordedAudio = null;
+      if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+      recordedAudioUrl = null;
+      clearInterval(recordingTimer);
+      document.getElementById('record-button').disabled = false;
+      document.getElementById('record-button').textContent = '● Record voice note';
+      document.getElementById('recording-timer').hidden = true;
+      document.getElementById('audio-preview').removeAttribute('src');
+      document.getElementById('audio-preview').hidden = true;
+    }
+
+    document.getElementById('record-button').addEventListener('click', toggleRecording);
     document.querySelectorAll('[data-close]').forEach((button) => {
       button.addEventListener('click', () => document.getElementById(button.dataset.close).close());
     });
@@ -461,15 +949,43 @@
         if (event.target === dialog) dialog.close();
       });
     });
-
-    loadTickets().catch((error) => {
-      ticketList.innerHTML = '<div class="empty">Could not load tickets.</div>';
-      document.getElementById('sync-state').textContent = 'Connection error';
-      showToast(error.message, true);
+    document.getElementById('image-dialog').addEventListener('close', () => {
+      document.getElementById('preview-image').removeAttribute('src');
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = null;
     });
-    setInterval(() => {
-      loadAuditNotesFromApi().catch((error) => showToast(error.message, true));
-    }, 5000);
+    document.getElementById('delete-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const password = document.getElementById('delete-password').value;
+      if (password !== 'cat123123') {
+        document.getElementById('delete-message').textContent = 'Incorrect Master Password. Access Denied.';
+        document.getElementById('delete-password').select();
+        return;
+      }
+      const resolve = resolveDeletionPrompt;
+      resolveDeletionPrompt = null;
+      document.getElementById('delete-dialog').close();
+      if (resolve) resolve(password);
+    });
+    document.getElementById('delete-dialog').addEventListener('close', () => {
+      if (resolveDeletionPrompt) {
+        const resolve = resolveDeletionPrompt;
+        resolveDeletionPrompt = null;
+        resolve(null);
+      }
+    });
+
+    if (accessToken) {
+      const storedUser = sessionStorage.getItem('auditUser');
+      try {
+        currentUser = storedUser ? JSON.parse(storedUser) : null;
+        api('/api/auth/me').then((result) => enterWorkspace(result.user, accessToken)).catch(() => {
+          if (accessToken) signOut(false);
+        });
+      } catch {
+        signOut(false);
+      }
+    }
   </script>
 </body>
 </html>
