@@ -225,24 +225,26 @@
           <div class="auth-message" id="signin-message" aria-live="polite"></div>
         </form>
         <form class="form-stack" id="add-user-form" data-auth-panel="add-user" hidden>
-          <div><h2>Add an auditor or engineer</h2><p>Verify an existing account to authorize a new user.</p></div>
-          <div class="field"><label for="verify-username">Your username</label><input id="verify-username" name="currentUsername" autocomplete="username" required></div>
-          <div class="field"><label for="verify-password">Your password</label><input id="verify-password" name="currentPassword" type="password" autocomplete="current-password" required></div>
-          <div class="field"><label for="new-username">New user's username</label><input id="new-username" name="newUsername" autocomplete="off" minlength="2" maxlength="40" required></div>
-          <div class="field"><label for="new-password">New user's password (8+ characters)</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required></div>
-          <button class="button primary block" type="submit">Verify &amp; create account</button>
+          <div><h2>Add a user</h2><p>Enter the master authorization password to register a new account.</p></div>
+          <div class="field"><label for="new-username">New username</label><input id="new-username" name="newUsername" autocomplete="off" minlength="2" maxlength="40" required></div>
+          <div class="field"><label for="new-password">New password (minimum 6 characters)</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="6" required></div>
+          <div class="field"><label for="add-user-master-password">Master authorization password</label><input id="add-user-master-password" name="masterAuthorizationPassword" type="password" autocomplete="off" required></div>
+          <button class="button primary block" type="submit">Create User</button>
           <div class="auth-message" id="add-user-message" aria-live="polite"></div>
-        </form>
-        <form class="form-stack" id="reset-form" data-auth-panel="reset" hidden>
-          <div><h2>Restore the default administrator</h2><p>This replaces every account and invalidates existing sessions.</p></div>
-          <div class="field"><label for="reset-master-password">Master password</label><input id="reset-master-password" name="masterPassword" type="password" autocomplete="current-password" required></div>
-          <button class="button danger block" type="submit">Reset all users</button>
-          <div class="auth-message" id="reset-message" aria-live="polite"></div>
-          <div class="note-hint">The default sign-in is restored as Admin. Change shared credentials according to your deployment policy.</div>
         </form>
       </div>
     </div>
   </section>
+  <dialog class="delete-dialog" id="reset-users-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-head"><div><h3>Reset Users</h3><p>Remove all custom accounts. The protected default Admin account will remain unchanged.</p></div><button class="close" type="button" data-close="reset-users-dialog" aria-label="Close dialog">×</button></div>
+      <form class="form-stack" id="reset-form">
+        <div class="field"><label for="reset-master-password">Master authorization password</label><input id="reset-master-password" name="masterAuthorizationPassword" type="password" autocomplete="off" required></div>
+        <div class="delete-message" id="reset-message" role="alert" aria-live="assertive"></div>
+        <div class="delete-actions"><button class="button ghost small" type="button" data-close="reset-users-dialog">Cancel</button><button class="button danger small" type="submit">Reset custom users</button></div>
+      </form>
+    </div>
+  </dialog>
 
   <div class="app-shell" id="app-shell" hidden>
     <header class="topbar">
@@ -420,7 +422,21 @@
     }
 
     document.querySelectorAll('[data-auth-tab]').forEach((tab) => {
-      tab.addEventListener('click', () => setAuthTab(tab.dataset.authTab));
+      tab.addEventListener('click', () => {
+        if (tab.dataset.authTab === 'reset') {
+          document.querySelectorAll('[data-auth-tab]').forEach((item) => {
+            const active = item === tab;
+            item.classList.toggle('active', active);
+            item.setAttribute('aria-selected', String(active));
+          });
+          document.getElementById('reset-form').reset();
+          document.getElementById('reset-message').textContent = '';
+          document.getElementById('reset-users-dialog').showModal();
+          document.getElementById('reset-master-password').focus();
+          return;
+        }
+        setAuthTab(tab.dataset.authTab);
+      });
     });
 
     function enterWorkspace(user, token) {
@@ -480,22 +496,18 @@
       const message = document.getElementById('add-user-message');
       message.textContent = '';
       try {
-        const login = await api('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: form.get('currentUsername'), password: form.get('currentPassword') }),
-        });
-        accessToken = login.token;
         const created = await api('/api/auth/add-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: form.get('newUsername'), password: form.get('newPassword') }),
+          body: JSON.stringify({
+            username: form.get('newUsername'),
+            password: form.get('newPassword'),
+            masterAuthorizationPassword: form.get('masterAuthorizationPassword'),
+          }),
         });
         formElement.reset();
-        enterWorkspace(login.user, login.token);
-        showToast(`Account ${created.username} created.`);
+        message.textContent = `User ${created.username} created successfully.`;
       } catch (error) {
-        accessToken = null;
         message.textContent = error.message;
       }
     });
@@ -506,17 +518,21 @@
       const message = document.getElementById('reset-message');
       message.textContent = '';
       try {
-        const password = new FormData(formElement).get('masterPassword');
+        const password = new FormData(formElement).get('masterAuthorizationPassword');
         await api('/api/auth/reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ masterPassword: password }),
+          body: JSON.stringify({ masterAuthorizationPassword: password }),
         });
         formElement.reset();
+        document.getElementById('reset-users-dialog').close();
         setAuthTab('signin');
         document.getElementById('signin-username').value = 'Admin';
-        document.getElementById('signin-message').textContent = 'User list reset. Sign in using the default administrator credentials.';
-      } catch (error) { message.textContent = error.message; }
+        document.getElementById('signin-message').textContent = 'Custom users were removed. The protected Admin account is unchanged.';
+      } catch (error) {
+        message.textContent = error.message;
+        if (error.message === 'Invalid Master Authorization Password.') window.alert(error.message);
+      }
     });
 
     function ticketIsSelected(id) {
@@ -980,6 +996,9 @@
         resolveDeletionPrompt = null;
         resolve(null);
       }
+    });
+    document.getElementById('reset-users-dialog').addEventListener('close', () => {
+      setAuthTab('signin');
     });
 
     if (accessToken) {

@@ -183,9 +183,18 @@ if (!Array.isArray(initialTickets) || !Array.isArray(initialNotes)) {
   throw new Error('Tickets and notes storage must contain JSON arrays.');
 }
 
-let users = readJson(files.users, null);
-if (!Array.isArray(users) || users.length === 0) {
-  users = newDefaultUsers();
+const storedUsers = readJson(files.users, []);
+let users = Array.isArray(storedUsers) ? storedUsers : [];
+const storedDefaultAdmin = users.find((user) =>
+  typeof user.username === 'string' && user.username.toLowerCase() === DEFAULT_USERNAME.toLowerCase(),
+);
+const defaultAdmin = storedDefaultAdmin && passwordMatches(DEFAULT_PASSWORD, storedDefaultAdmin)
+  ? storedDefaultAdmin
+  : newDefaultUsers()[0];
+users = [defaultAdmin, ...users.filter((user) =>
+  typeof user.username === 'string' && user.username.toLowerCase() !== DEFAULT_USERNAME.toLowerCase(),
+)];
+if (!Array.isArray(storedUsers) || !storedDefaultAdmin || defaultAdmin !== storedDefaultAdmin || users.length !== storedUsers.length) {
   atomicWriteJson(files.users, users);
 }
 
@@ -251,11 +260,6 @@ function requireAuthentication(req, res, next) {
   return next();
 }
 
-function requireAdministrator(req, res, next) {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Administrator access is required to add users.' });
-  return next();
-}
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE, files: MAX_FILES_PER_NOTE, fields: 2, fieldSize: 12000 },
@@ -310,7 +314,7 @@ function removeAttachmentFiles(notes) {
 }
 
 function masterPasswordFromRequest(req) {
-  return req.get('x-master-password') || req.body?.masterPassword;
+  return req.get('x-master-password') || req.body?.masterAuthorizationPassword || req.body?.masterPassword;
 }
 
 app.use(express.json({ limit: '1mb' }));
@@ -331,23 +335,36 @@ app.post('/api/auth/login', (req, res, next) => {
   }
 });
 
-app.post('/api/auth/add-user', requireAuthentication, requireAdministrator, (req, res, next) => {
+app.post('/api/auth/add-user', (req, res, next) => {
   try {
-    const { username, password } = req.body || {};
-    if (typeof username !== 'string' || !/^[A-Za-z0-9_.-]{2,40}$/.test(username.trim())) {
+    const {
+      username,
+      newUsername = username,
+      password,
+      newPassword = password,
+      masterAuthorizationPassword,
+      masterPassword,
+    } = req.body || {};
+    if (!masterPasswordMatches(masterAuthorizationPassword || masterPassword)) {
+      return res.status(403).json({ error: 'Invalid Master Authorization Password.' });
+    }
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+    if (newPassword.length > 200) {
+      return res.status(400).json({ error: 'Password must be at most 200 characters long.' });
+    }
+    if (typeof newUsername !== 'string' || !/^[A-Za-z0-9_.-]{2,40}$/.test(newUsername.trim())) {
       return res.status(400).json({ error: 'Username must be 2–40 letters, numbers, dots, dashes, or underscores.' });
     }
-    if (typeof password !== 'string' || password.length < 8 || password.length > 200) {
-      return res.status(400).json({ error: 'Password must contain at least 8 characters.' });
-    }
     users = getUsers();
-    if (users.some((user) => user.username.toLowerCase() === username.trim().toLowerCase())) {
+    if (users.some((user) => user.username.toLowerCase() === newUsername.trim().toLowerCase())) {
       return res.status(409).json({ error: 'That username already exists.' });
     }
     const user = {
-      username: username.trim(),
+      username: newUsername.trim(),
       role: 'auditor',
-      ...hashPassword(password),
+      ...hashPassword(newPassword),
       createdAt: new Date().toISOString(),
     };
     users.push(user);
@@ -360,10 +377,17 @@ app.post('/api/auth/add-user', requireAuthentication, requireAdministrator, (req
 
 app.post('/api/auth/reset', (req, res, next) => {
   if (!masterPasswordMatches(masterPasswordFromRequest(req))) {
-    return res.status(403).json({ error: 'Incorrect Master Password. Access Denied.' });
+    return res.status(403).json({ error: 'Invalid Master Authorization Password.' });
   }
   try {
-    users = newDefaultUsers();
+    users = getUsers();
+    const defaultAdmin = users.find((user) =>
+      typeof user.username === 'string' && user.username.toLowerCase() === DEFAULT_USERNAME.toLowerCase(),
+    );
+    if (!defaultAdmin || !passwordMatches(DEFAULT_PASSWORD, defaultAdmin)) {
+      throw new Error('Protected default administrator account is missing or invalid.');
+    }
+    users = [defaultAdmin];
     atomicWriteJson(files.users, users);
     authSecret = crypto.randomBytes(48);
     const temporarySecret = `${files.secret}.${process.pid}.${crypto.randomUUID()}.tmp`;
