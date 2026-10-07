@@ -64,22 +64,31 @@
     .auth-message { min-height: 19px; color: var(--red); font-size: 12px; }
     .note-hint { margin-top: 12px; color: #8294ae; font-size: 11px; }
     .app-shell { min-height: 100vh; }
-    .topbar { border-bottom: 1px solid var(--line); background: rgba(10,17,40,.72); backdrop-filter: blur(20px); }
-    .topbar-inner { max-width: 1400px; margin: 0 auto; padding: 15px 28px; display: flex; justify-content: space-between; align-items: center; gap: 22px; }
-    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
-    .brand-logo { width: 47px; height: 47px; flex: 0 0 auto; object-fit: contain; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.05); padding: 4px; }
+    .topbar { position: relative; overflow: hidden; border-bottom: 3px solid #0284c7; background-color: #030a1c; background-image: radial-gradient(ellipse at 75% 0, rgba(37,99,235,.22), transparent 48%), linear-gradient(rgba(191,219,254,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(191,219,254,.045) 1px, transparent 1px); background-size: auto, 34px 34px, 34px 34px; }
+    .topbar-inner { position: relative; z-index: 1; width: min(1400px, calc(100% - 56px)); min-height: 240px; margin: 0 auto; padding: 24px 0 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 370px); align-items: center; gap: 38px; }
+    .brand { min-width: 0; }
     .brand-copy { min-width: 0; }
-    .brand-copy .eyebrow { margin: 0 0 3px; color: var(--cyan); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; font-weight: 800; }
-    .brand-copy h1 { margin: 0; font-size: clamp(15px, 1.9vw, 21px); line-height: 1.2; letter-spacing: -.035em; }
-    .brand-copy p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .brand-copy .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: #22c55e; text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 800; }
+    .eyebrow-mark { width: 22px; height: 2px; flex: 0 0 auto; background: #22c55e; }
+    .brand-copy h1 { max-width: 810px; margin: 0; color: #ffffff; font-size: clamp(1.55rem, 3.4vw, 2.2rem); font-weight: 800; line-height: 1.12; letter-spacing: -.025em; }
+    .brand-copy p { max-width: 760px; margin: 12px 0 0; color: #cbd5e1; font-size: 14px; }
+    .header-side { display: grid; gap: 10px; justify-items: stretch; }
     .header-actions { display: flex; align-items: center; justify-content: end; gap: 8px; flex-wrap: wrap; }
-    .profile-card { display: flex; align-items: center; gap: 10px; margin-left: 8px; padding-left: 15px; border-left: 1px solid var(--line); }
-    .avatar { width: 42px; height: 42px; flex: 0 0 auto; object-fit: cover; border: 1px solid rgba(56,189,248,.35); border-radius: 50%; background: #152846; }
-    .profile-copy { max-width: 194px; }
-    .profile-label { display: block; color: var(--cyan); font-size: 8px; font-weight: 850; letter-spacing: .12em; }
-    .profile-name { display: block; margin-top: 2px; font-size: 12px; font-weight: 750; }
-    .profile-company { display: block; color: var(--muted); font-size: 10px; line-height: 1.3; }
-    .profile-user { display: block; margin-top: 2px; color: #b5c9e2; font-size: 10px; }
+    .profile-card { display: grid; gap: 10px; padding: 16px; border: 1px solid #0284c7; border-radius: 12px; background: rgba(15,23,42,.7); box-shadow: 0 12px 30px rgba(0,0,0,.17); backdrop-filter: blur(12px); }
+    .profile-label { display: block; color: #22c55e; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+    .profile-main { display: flex; align-items: center; gap: 12px; }
+    .avatar { display: block; width: 68px; height: 68px; flex: 0 0 68px; object-fit: cover; border: 1px solid rgba(56,189,248,.38); border-radius: 12px; background: #152846; }
+    .profile-copy { min-width: 0; }
+    .profile-name { display: block; color: #ffffff; font-size: 15px; font-weight: 800; }
+    .profile-designation { display: block; margin-top: 2px; color: #cbd5e1; font-size: 11px; }
+    .profile-company { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; line-height: 1.35; }
+    .audited-badge { justify-self: start; border: 1px solid rgba(56,189,248,.6); border-radius: 999px; padding: 4px 9px; color: #bae6fd; background: rgba(2,132,199,.09); font-size: 9px; font-weight: 700; }
+    .profile-footer { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.1); }
+    .profile-user { display: inline-flex; min-width: 0; align-items: center; gap: 7px; border: 1px solid rgba(34,197,94,.25); border-radius: 999px; padding: 5px 9px; color: #d1fae5; background: rgba(34,197,94,.08); font-size: 10px; }
+    .profile-user::before { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #22c55e; box-shadow: 0 0 9px rgba(34,197,94,.5); content: ""; }
+    .profile-user strong { overflow: hidden; color: #ffffff; text-overflow: ellipsis; }
+    .button.logout { min-height: 33px; border-color: #b91c1c; padding: 6px 12px; color: #ffffff; background: #991b1b; font-size: 11px; }
+    .button.logout:hover { border-color: #dc2626; background: #b91c1c; }
     .page { max-width: 1400px; margin: 0 auto; padding: 26px 28px 60px; }
     .hero { position: relative; overflow: hidden; display: flex; align-items: end; justify-content: space-between; gap: 18px; padding: 23px 25px; margin-bottom: 17px; border: 1px solid rgba(56,189,248,.2); border-radius: 16px; background: radial-gradient(ellipse at 100% 0, rgba(37,99,235,.25), transparent 50%), linear-gradient(115deg, rgba(2,132,199,.16), rgba(15,23,42,.82) 60%); }
     .hero::after { position: absolute; top: -84px; right: 13%; width: 240px; height: 240px; border: 1px solid rgba(56,189,248,.1); border-radius: 50%; box-shadow: 0 0 0 32px rgba(56,189,248,.025), 0 0 0 64px rgba(56,189,248,.018); content: ""; pointer-events: none; }
@@ -168,13 +177,13 @@
     .toast.visible { opacity: 1; transform: translateY(0); }
     .toast.error { border-color: rgba(251,113,133,.3); background: #3a1928; }
     @media (max-width: 930px) {
-      .topbar-inner { align-items: start; flex-direction: column; }
-      .header-actions { justify-content: start; width: 100%; }
-      .profile-card { margin-left: auto; }
+      .topbar-inner { grid-template-columns: minmax(0, 1fr) minmax(300px, 350px); gap: 20px; }
+      .header-side { align-self: center; }
+      .header-actions { justify-content: end; }
       .dashboard-grid { grid-template-columns: minmax(250px, .8fr) minmax(0, 1.3fr); }
     }
     @media (max-width: 690px) {
-      .topbar-inner { padding: 13px 15px; }
+      .topbar-inner { width: calc(100% - 30px); grid-template-columns: 1fr; gap: 16px; padding: 19px 0; }
       .page { padding: 17px 14px 38px; }
       .dashboard-grid { grid-template-columns: 1fr; }
       .metrics { gap: 7px; }
@@ -183,14 +192,13 @@
       .metric-icon { display: none; }
       .hero { align-items: start; flex-direction: column; padding: 17px; }
       .sync-state { align-self: end; }
-      .profile-copy { max-width: 155px; }
+      .header-side { grid-template-columns: 1fr; }
+      .header-actions { justify-content: start; }
       .header-actions .button { flex: 1; }
-      .profile-card { width: 100%; margin: 3px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); border-left: 0; }
-      .profile-card > .button { margin-left: auto; }
+      .profile-card { padding: 14px; }
     }
     @media (max-width: 420px) {
-      .brand-copy h1 { font-size: 14px; }
-      .brand-logo { width: 40px; height: 40px; }
+      .brand-copy h1 { font-size: clamp(1.45rem, 7vw, 1.8rem); }
       .header-actions .button { min-height: 36px; padding: 7px 9px; font-size: 11px; }
       .metrics { grid-template-columns: 1fr; }
       .metric { display: flex; }
@@ -198,6 +206,125 @@
       .auth-screen { padding: 13px; }
       .auth-brand { padding-inline: 18px; }
       .auth-content { padding-inline: 19px; }
+    }
+    body { color: #0f172a; background: #f8fafc; }
+    .topbar-inner { width: min(1320px, calc(100% - 64px)); min-height: 206px; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; }
+    .brand { display: flex; align-items: center; gap: 20px; }
+    .brand-logo { display: block; width: 202px; height: 103px; flex: 0 0 auto; object-fit: contain; padding: 9px; border: 1px solid rgba(255,255,255,.72); border-radius: 9px; background: #ffffff; }
+    .brand-copy h1 { max-width: 760px; font-size: clamp(1.05rem, 2vw, 1.4rem); }
+    .profile-card { gap: 8px; padding: 14px; }
+    .profile-main { gap: 10px; }
+    .avatar { width: 78px; height: 78px; flex-basis: 78px; border-radius: 8px; }
+    .profile-name { font-size: 1.1rem; }
+    .profile-designation { margin-top: 1px; font-size: 10px; }
+    .profile-company { margin-top: 2px; font-size: 9px; line-height: 1.25; }
+    .audited-badge { padding: 3px 8px; font-size: 8px; }
+    .profile-footer { padding-top: 9px; border-top: 1px solid rgba(2, 132, 199, 0.4); }
+    .profile-user { gap: 6px; padding: 4px 7px; color: #cbd5e1; border-color: rgba(148,163,184,.35); background: rgba(148,163,184,.08); font-size: 9px; }
+    .profile-user::before { display: none; }
+    .toolbar { border-bottom: 1px solid #dbe3ed; background: #ffffff; box-shadow: 0 3px 10px rgba(15,23,42,.04); }
+    .toolbar-inner { width: min(1320px, calc(100% - 64px)); min-height: 48px; margin: 0 auto; display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
+    .header-actions { display: flex; align-items: center; justify-content: end; gap: 8px; flex: 0 0 auto; }
+    .toolbar .button.ghost { border-color: #cbd5e1; color: #334155; background: #ffffff; }
+    .toolbar .button.ghost:hover { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
+    .toolbar-status { color: #64748b; font-size: 10px; white-space: nowrap; }
+    .toolbar-status::before { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #16a34a; content: ""; }
+    .page { width: min(1320px, calc(100% - 64px)); max-width: none; margin: 0 auto; padding: 18px 0 55px; }
+    .hero { display: none; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 25px; }
+    .metric, .panel { border: 1px solid #dbe3ed; border-radius: 9px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); backdrop-filter: none; }
+    .metric { min-height: 80px; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-top: 3px solid #2563eb; }
+    .metric:nth-child(2) { border-top-color: #dc2626; }
+    .metric:nth-child(3) { border-top-color: #16a34a; }
+    .metric-label { color: #64748b; font-size: 10px; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 2px; color: #0f172a; font-size: 23px; letter-spacing: -.04em; }
+    .metric-icon { width: 32px; height: 32px; border: 1px solid #dbeafe; border-radius: 8px; background: #eff6ff; color: #2563eb; }
+    .dashboard-grid { grid-template-columns: minmax(255px, .78fr) minmax(0, 1.6fr); gap: 16px; align-items: start; }
+    .panel { min-width: 0; padding: 17px; transition: border-color .18s, box-shadow .18s; }
+    .panel:hover { border-color: #c5d4e6; box-shadow: 0 6px 20px rgba(15,23,42,.07); }
+    .panel-heading h3 { color: #0f172a; }
+    .panel-heading p { color: #64748b; }
+    .panel-kicker { color: #2563eb; }
+    .ticket-list { max-height: 680px; overflow-y: auto; padding: 1px 4px 1px 1px; }
+    .ticket-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: #ffffff; transition: border-color .16s, background .16s, box-shadow .16s; }
+    .ticket-card:hover { border-color: #93c5fd; background: #f8fbff; }
+    .ticket-card.selected { border-color: #2563eb; background: #eff6ff; box-shadow: inset 3px 0 0 #2563eb, 0 2px 7px rgba(37,99,235,.08); }
+    .ticket-select { color: #0f172a; }
+    .ticket-title { display: block; margin-top: 4px; color: #0f172a; }
+    .ticket-id { margin: 0; color: #2563eb; }
+    .ticket-index { display: inline-block; margin-right: 5px; color: #64748b; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 9px; font-weight: 800; }
+    .status-tag { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
+    .ticket-description { color: #475569; }
+    .ticket-footer { border-top-color: #eef2f7; }
+    .ticket-meta { color: #64748b; }
+    .ticket-delete { border: 1px solid #fecaca; color: #b91c1c; background: #fff7f7; }
+    .ticket-delete:hover, .note-delete:hover { background: #fee2e2; }
+    .active-ticket { color: #2563eb !important; }
+    .workspace-right { display: grid; min-width: 0; gap: 14px; }
+    .selected-ticket { overflow: hidden; margin-bottom: 0; border: 1px solid #cbd5e1; border-radius: 9px; background: #f8fafc; }
+    .selected-ticket-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 13px 14px 10px; }
+    .selected-ticket h4 { margin: 3px 0 0; color: #0f172a; font-size: 16px; line-height: 1.3; }
+    .selected-ticket-copy { margin: 0; padding: 0 14px 12px; color: #334155; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .selected-ticket-meta { display: flex; flex-wrap: wrap; gap: 7px 13px; padding: 9px 14px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 10px; }
+    .note-form { gap: 10px; margin-bottom: 14px; padding: 12px; border: 1px solid #dbe3ed; border-radius: 8px; background: #f8fafc; }
+    .note-form textarea { border-color: #cbd5e1; color: #0f172a; background: #ffffff; }
+    .note-form textarea::placeholder { color: #94a3b8; }
+    .note-form .button.ghost { border-color: #cbd5e1; color: #334155; background: #ffffff; }
+    .note-form .button.ghost:hover { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
+    .file-picker { color: #475569; }
+    .file-picker input { border-color: #cbd5e1; color: #334155; background: #ffffff; }
+    .recording-state { color: #dc2626; }
+    .selected-files { color: #64748b; }
+    .notes-feed { max-height: 450px; scrollbar-color: #cbd5e1 transparent; }
+    .note-card { border-color: #dbe3ed; border-radius: 8px; background: #ffffff; }
+    .note-author { color: #0f172a; }
+    .note-date { color: #64748b; }
+    .note-action { border-color: #cbd5e1; color: #334155; background: #ffffff; }
+    .note-delete { border-color: #fecaca; color: #b91c1c; }
+    .note-text { color: #334155; }
+    .empty { border-color: #cbd5e1; color: #64748b; }
+    .attachment { border-color: #dbe3ed; background: #ffffff; }
+    .attachment-name { color: #475569; }
+    .download-link { color: #0369a1; }
+    .attachment-pdf { color: #0369a1; }
+    @media (max-width: 930px) {
+      .topbar-inner { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; }
+      .brand-copy h1 { white-space: normal; }
+      .dashboard-grid { grid-template-columns: minmax(230px, .8fr) minmax(0, 1.3fr); }
+    }
+    @media (min-width: 1200px) {
+      .brand-copy h1 { white-space: nowrap; }
+    }
+    @media (max-width: 690px) {
+      .topbar-inner { width: calc(100% - 30px); grid-template-columns: 1fr; gap: 14px; padding: 19px 0; }
+      .brand { align-items: flex-start; gap: 13px; }
+      .brand-logo { width: 134px; height: 86px; padding: 7px; }
+      .toolbar-inner { width: calc(100% - 30px); min-height: 52px; }
+      .header-actions { width: 100%; justify-content: stretch; }
+      .header-actions .button { flex: 1; }
+      .toolbar-status { display: none; }
+      .page { width: calc(100% - 28px); padding: 17px 0 38px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .ticket-list { max-height: 340px; }
+      .metrics { gap: 7px; margin-bottom: 16px; }
+      .metric { min-height: 65px; padding: 10px; }
+      .metric strong { font-size: 21px; }
+      .metric-icon { display: none; }
+      .profile-card { padding: 14px; }
+    }
+    @media (max-width: 420px) {
+      .topbar-inner { width: calc(100% - 26px); }
+      .brand { gap: 10px; }
+      .brand-logo { width: 94px; height: 72px; padding: 5px; }
+      .brand-copy h1 { font-size: clamp(.9rem, 4.4vw, 1.12rem); }
+      .page { width: calc(100% - 24px); }
+      .metrics { grid-template-columns: 1fr; }
+      .metric { display: flex; }
+      .metric strong { margin-left: auto; }
+    }
+    @media (max-width: 800px) {
+      .topbar-inner { grid-template-columns: 1fr; gap: 16px; }
+      .profile-card { width: 100%; }
     }
   </style>
 </head>
@@ -252,35 +379,47 @@
         <div class="brand">
           <img class="brand-logo image-fallback" src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
           <div class="brand-copy">
-            <p class="eyebrow">Sentinel Genesis Technologies</p>
-            <h1>SiyanoAV Total Security</h1>
-            <p>Audit &amp; Diagnostic Report · Quality assurance desk</p>
+            <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span>SECURITY REVIEW / EVIDENCE BRIEF</p>
+            <h1>SiyanoAV Total Security — Audit &amp; Diagnostic Report</h1>
+            <p>Official Security Audit &amp; Technical Evaluation — SiyanoAV Labs / Sentinel Genesis Technologies</p>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
-          <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
+        <div class="header-side">
           <div class="profile-card">
-            <img class="avatar image-fallback" src="/images/director.png" alt="Sanjay Ghelani, Founder and Director">
-            <div class="profile-copy">
-              <span class="profile-label">REPORT AUDITOR &amp; AUTHOR</span>
-              <span class="profile-name">Sanjay Ghelani</span>
-              <span class="profile-company">Sentinel Genesis Technologies Pvt Ltd</span>
-              <span class="profile-user">Signed in as <strong id="signed-in-user"></strong></span>
+            <span class="profile-label">REPORT AUDITOR &amp; AUTHOR</span>
+            <div class="profile-main">
+              <img class="avatar image-fallback" src="/images/director.png" alt="Sanjay Ghelani, Founder and Director">
+              <div class="profile-copy">
+                <span class="profile-name">Sanjay Ghelani</span>
+                <span class="profile-designation">Founder &amp; Director</span>
+                <span class="profile-company">Sentinel Genesis Technologies Pvt Ltd</span>
+              </div>
             </div>
-            <button class="button ghost small" id="logout-button" type="button">Logout</button>
+            <span class="audited-badge">Audited for SiyanoAV Total Security</span>
+            <div class="profile-footer">
+              <span class="profile-user">Active · <strong id="signed-in-user"></strong></span>
+              <button class="button logout" id="logout-button" type="button">Logout</button>
+            </div>
           </div>
         </div>
       </div>
     </header>
+    <nav class="toolbar" aria-label="Workspace actions">
+      <div class="toolbar-inner">
+        <div class="header-actions">
+          <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
+          <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
+          <span class="toolbar-status" id="sync-state" aria-live="polite">Connected</span>
+        </div>
+      </div>
+    </nav>
     <main class="page">
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Security assessment · Internal workspace</p>
-          <h2>SiyanoAV Total Security — Audit &amp; Diagnostic Report</h2>
-          <p>Record technical concerns, findings, remediation notes, and evidence.</p>
+          <p class="eyebrow">SiyanoAV Labs · Security workspace</p>
+          <h2>Audit workspace overview</h2>
+          <p>Track technical concerns, findings, remediation notes, and evidence.</p>
         </div>
-        <div class="sync-state" id="sync-state" aria-live="polite">Connected</div>
       </section>
       <section class="metrics" aria-label="Audit metrics">
         <article class="metric"><div><span class="metric-label">Total concerns</span><strong id="total-count">0</strong></div><span class="metric-icon">▤</span></article>
@@ -288,31 +427,44 @@
         <article class="metric"><div><span class="metric-label">Audit notes</span><strong id="note-count">0</strong></div><span class="metric-icon">◷</span></article>
       </section>
       <div class="dashboard-grid">
-        <section class="panel">
+        <aside class="panel ticket-sidebar">
           <div class="panel-heading">
-            <div><span class="panel-kicker">Issue register</span><h3>Core Technical Concerns</h3><p>Select a ticket to inspect its evidence log.</p></div>
+            <div><span class="panel-kicker">Issue register</span><h3>Tracked Tickets</h3><p>Select an item to open its details and evidence.</p></div>
           </div>
           <div class="ticket-list" id="ticket-list"><div class="empty">Loading concerns…</div></div>
-        </section>
-        <section class="panel">
-          <div class="panel-heading">
-            <div><span class="panel-kicker">Evidence &amp; observations</span><h3>Audit Notes &amp; Evidence Log</h3><p class="active-ticket" id="active-ticket-label">Select a ticket to view its audit notes.</p></div>
-          </div>
-          <form class="note-form" id="note-form">
-            <textarea id="note-text" maxlength="10000" placeholder="Record an observation, test result, or remediation note…" aria-label="Audit note text"></textarea>
-            <div class="note-tools">
-              <label class="file-picker">Attach images or PDF <input id="attachment-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" multiple></label>
-              <div class="record-controls">
-                <button class="button ghost small" id="record-button" type="button">● Record voice note</button>
-                <span class="recording-state" id="recording-timer" hidden>00:00</span>
-                <button class="button primary small" id="save-note-button" type="submit">Save Note</button>
-              </div>
+        </aside>
+        <div class="workspace-right">
+          <section class="selected-ticket" id="selected-ticket-details" aria-label="Selected ticket details" hidden>
+            <div class="selected-ticket-head">
+              <div><span class="ticket-id" id="selected-ticket-id"></span><h4 id="selected-ticket-title"></h4></div>
+              <span class="status-tag" id="selected-ticket-status"></span>
             </div>
-            <div class="selected-files" id="selected-files"></div>
-            <audio class="audio-preview" id="audio-preview" controls hidden></audio>
-          </form>
-          <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
-        </section>
+            <p class="selected-ticket-copy" id="selected-ticket-description"></p>
+            <div class="selected-ticket-meta">
+              <span id="selected-ticket-author"></span>
+              <span id="selected-ticket-date"></span>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <div><span class="panel-kicker">Evidence &amp; observations</span><h3>Audit Notes &amp; Evidence Log</h3><p class="active-ticket" id="active-ticket-label">Select a ticket to view its audit notes.</p></div>
+            </div>
+            <form class="note-form" id="note-form">
+              <textarea id="note-text" maxlength="10000" placeholder="Record an observation, test result, or remediation note…" aria-label="Audit note text"></textarea>
+              <div class="note-tools">
+                <label class="file-picker">Attach images or PDF <input id="attachment-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" multiple></label>
+                <div class="record-controls">
+                  <button class="button ghost small" id="record-button" type="button">● Record voice note</button>
+                  <span class="recording-state" id="recording-timer" hidden>00:00</span>
+                  <button class="button primary small" id="save-note-button" type="submit">Save Note</button>
+                </div>
+              </div>
+              <div class="selected-files" id="selected-files"></div>
+              <audio class="audio-preview" id="audio-preview" controls hidden></audio>
+            </form>
+            <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
+          </section>
+        </div>
       </div>
     </main>
   </div>
@@ -373,9 +525,18 @@
 
     document.querySelectorAll('.image-fallback').forEach((image) => {
       image.addEventListener('error', () => {
-        image.src = fallbackImage;
-        image.classList.remove('image-fallback');
-      }, { once: true });
+        if (image.dataset.fallbackSrc && !image.dataset.fallbackTried) {
+          image.dataset.fallbackTried = 'true';
+          image.src = image.dataset.fallbackSrc;
+          return;
+        }
+        if (!image.dataset.fallbackImageTried) {
+          image.dataset.fallbackImageTried = 'true';
+          image.src = fallbackImage;
+          return;
+        }
+        image.remove();
+      });
     });
 
     function showToast(message, isError = false) {
@@ -548,10 +709,12 @@
         document.getElementById('note-count').textContent = '0';
         notesFeed.innerHTML = '<div class="empty">Create a ticket to start its evidence log.</div>';
         currentTicketId = null;
+        document.getElementById('selected-ticket-details').hidden = true;
         document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
         return;
       }
-      for (const ticket of [...tickets].reverse()) {
+      const displayedTickets = [...tickets].reverse();
+      for (const [index, ticket] of displayedTickets.entries()) {
         const card = document.createElement('article');
         card.className = `ticket-card${ticketIsSelected(ticket.id) ? ' selected' : ''}`;
         const select = document.createElement('button');
@@ -561,13 +724,16 @@
         const head = document.createElement('div');
         head.className = 'ticket-head';
         const titleGroup = document.createElement('span');
+        const ticketNumber = document.createElement('span');
+        ticketNumber.className = 'ticket-index';
+        ticketNumber.textContent = `Ticket${String(index + 1).padStart(2, '0')}`;
         const id = document.createElement('span');
         id.className = 'ticket-id';
         id.textContent = ticket.id;
         const title = document.createElement('span');
         title.className = 'ticket-title';
         title.textContent = ticket.title;
-        titleGroup.append(id, document.createElement('br'), title);
+        titleGroup.append(ticketNumber, id, document.createElement('br'), title);
         const status = document.createElement('span');
         status.className = 'status-tag';
         status.textContent = ticket.status || 'Open';
@@ -599,6 +765,22 @@
       if (currentTicketId && !tickets.some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
       renderTickets();
       if (!currentTicketId && tickets.length) await selectTicket(tickets[tickets.length - 1].id);
+      else if (currentTicketId) renderSelectedTicket(tickets.find((ticket) => ticket.id === currentTicketId));
+    }
+
+    function renderSelectedTicket(ticket) {
+      const details = document.getElementById('selected-ticket-details');
+      if (!ticket) {
+        details.hidden = true;
+        return;
+      }
+      details.hidden = false;
+      document.getElementById('selected-ticket-id').textContent = ticket.id;
+      document.getElementById('selected-ticket-title').textContent = ticket.title;
+      document.getElementById('selected-ticket-status').textContent = ticket.status || 'Open';
+      document.getElementById('selected-ticket-description').textContent = ticket.description;
+      document.getElementById('selected-ticket-author').textContent = `Reported by ${ticket.author || 'Unknown author'}`;
+      document.getElementById('selected-ticket-date').textContent = `Created ${new Date(ticket.createdAt).toLocaleString()}`;
     }
 
     async function selectTicket(ticketId) {
@@ -606,6 +788,7 @@
       noteSnapshot = null;
       const ticket = tickets.find((entry) => entry.id === ticketId);
       document.getElementById('active-ticket-label').textContent = ticket ? `${ticket.id} · ${ticket.title}` : '';
+      renderSelectedTicket(ticket);
       renderTickets();
       notesFeed.innerHTML = '<div class="empty">Loading audit notes…</div>';
       try { await loadAuditNotesFromApi(); }
