@@ -88,6 +88,156 @@ function createTicketId(existingTickets) {
   return id;
 }
 
+const SAMPLE_AUDIT_CASES = [
+  {
+    id: 'Ticket01',
+    title: 'Real-time Scanning & HIPS Disagreement',
+    riskRating: 'HIGH',
+    description: 'A controlled test file is blocked by real-time scanning but is still permitted by the host intrusion prevention policy, leaving enforcement inconsistent across protection layers.',
+    notes: [
+      'Expected: both real-time scanning and HIPS deny the controlled test artifact. Reported: scanning quarantines it, while the HIPS event records an allow decision. Evidence reference (mock): scan-hips-policy-matrix.csv.',
+      'Reproduced after refreshing policy and restarting the service. Initial root-cause hypothesis: HIPS evaluates a cached trust decision before the scanner verdict is committed. Evidence reference (mock): event-sequence-ticket01.txt.',
+      'Recommendation: correlate verdicts by file hash and fail closed when the protection layers disagree. Retest should confirm a single deny outcome and matching audit events. Evidence reference (mock): remediation-retest-ticket01.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket02',
+    title: 'Advanced Threat Shield Self-Protection Gap',
+    riskRating: 'HIGH',
+    description: 'A standard-user process can stop a helper component used by Advanced Threat Shield, temporarily reducing behavioral monitoring until the service recovers.',
+    notes: [
+      'Expected: protected components reject stop and unload requests from an untrusted standard-user process. Reported: the helper exits briefly, and monitoring resumes only after automatic recovery. Evidence reference (mock): shield-stop-attempt.log.',
+      'The service control request was denied for the primary process but accepted by the helper. Root-cause hypothesis: the helper is missing the product self-protection registration. Evidence reference (mock): service-acl-review.txt.',
+      'Recommendation: apply the same tamper-protection policy to the helper and alert on unexpected termination. Validate across reboot and update cycles. Evidence reference (mock): shield-hardening-checklist.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket03',
+    title: 'Privilege Escalation via Update Binary',
+    riskRating: 'CRITICAL',
+    description: 'The updater service launches a replaceable executable from a directory with insufficient write restrictions, creating a potential path to elevated code execution.',
+    notes: [
+      'Expected: only an administrator or signed update workflow can replace files executed by the elevated updater. Reported: the service directory permissions allow a lower-privileged account to modify the helper. Evidence reference (mock): updater-acl-capture.txt.',
+      'Controlled validation confirmed the executable is loaded by the elevated service after restart; no payload was used. Root-cause hypothesis: inherited write permissions were not removed during installation. Evidence reference (mock): process-launch-trace-ticket03.etl.',
+      'Recommendation: restrict directory and binary ACLs, verify the publisher signature immediately before launch, and test upgrades from a standard account. Evidence reference (mock): signed-launch-retest.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket04',
+    title: 'Unencrypted Telemetry Data Transmission',
+    riskRating: 'MEDIUM',
+    description: 'A telemetry submission path appears to permit cleartext transport in a non-production configuration, potentially exposing diagnostic metadata on untrusted networks.',
+    notes: [
+      'Expected: telemetry is transmitted only over authenticated TLS. Reported: a test endpoint accepted a plaintext request containing device and diagnostic metadata. Evidence reference (mock): telemetry-protocol-review.pcap.txt.',
+      'Issue is reproducible with the lab transport override; production endpoint behavior still requires confirmation. Root-cause hypothesis: the fallback transport option is enabled when certificate setup fails. Evidence reference (mock): client-config-ticket04.json.',
+      'Recommendation: disable plaintext fallback, fail closed on TLS errors, and confirm that telemetry contains no credentials or sensitive file content. Evidence reference (mock): tls-only-validation.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket05',
+    title: 'Session Timeout Bypass on Re-auth',
+    riskRating: 'MEDIUM',
+    description: 'Returning to the dashboard after a session expires can briefly reuse cached authorization state instead of requiring fresh authentication.',
+    notes: [
+      'Expected: expired sessions are rejected for every protected request and the user is redirected to sign in. Reported: a previously loaded view remains interactive until the next data refresh. Evidence reference (mock): session-expiry-repro.md.',
+      'The API rejects the expired token, but the client retains selected-ticket state and shows stale content. Root-cause hypothesis: the 401 handler does not clear all cached view state. Evidence reference (mock): auth-refresh-console.txt.',
+      'Recommendation: clear protected content immediately on expiry and require a new authenticated response before restoring the view. Evidence reference (mock): session-timeout-retest.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket06',
+    title: 'Memory Injection Vulnerability in Driver',
+    riskRating: 'CRITICAL',
+    description: 'A privileged driver interface appears to accept a buffer operation without adequately validating caller context and requested memory ranges.',
+    notes: [
+      'Expected: the driver validates request size, process context, and target memory range before handling an operation. Reported: malformed lab requests reached a privileged memory-handling path. Evidence reference (mock): driver-ioctl-boundary.txt.',
+      'Testing was limited to a disposable virtual machine with benign malformed inputs. Root-cause hypothesis: a legacy IOCTL handler trusts a user-supplied length before copying data. Evidence reference (mock): driver-verifier-summary.log.',
+      'Recommendation: audit all IOCTL handlers, enforce strict bounds and access checks, and add fuzz regression tests before release. Evidence reference (mock): driver-fix-validation.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket07',
+    title: 'Insecure Deserialization in Log Collector',
+    riskRating: 'HIGH',
+    description: 'The log collector accepts structured diagnostic input without a strict schema, creating risk of unsafe object construction from malformed local data.',
+    notes: [
+      'Expected: collector input is parsed using a constrained schema and unsupported object types are rejected. Reported: malformed nested values are accepted and passed into the processing pipeline. Evidence reference (mock): collector-parser-cases.json.',
+      'No code execution was attempted. Root-cause hypothesis: a general-purpose object deserializer is used where a data-only parser is sufficient. Evidence reference (mock): collector-input-trace.txt.',
+      'Recommendation: use a safe data-only parser, validate depth and field types, and cap payload size. Add malformed-input regression cases. Evidence reference (mock): parser-hardening-tests.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket08',
+    title: 'Weak Cryptographic Key Derivation',
+    riskRating: 'MEDIUM',
+    description: 'A local credential-protection path uses a low work factor or insufficiently unique salt parameters compared with current password-storage guidance.',
+    notes: [
+      'Expected: password-derived secrets use a modern, tunable KDF with a unique random salt and documented work parameters. Reported: the reviewed test configuration uses weaker derivation settings. Evidence reference (mock): kdf-parameter-review.csv.',
+      'The finding is based on configuration review and offline timing measurements using synthetic credentials only. Root-cause hypothesis: compatibility defaults were retained after hardware capabilities improved. Evidence reference (mock): synthetic-kdf-benchmark.txt.',
+      'Recommendation: migrate stored secrets safely to a stronger KDF, benchmark on supported devices, and version parameters for future upgrades. Evidence reference (mock): kdf-migration-plan.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket09',
+    title: 'Unauthorized Registry Modification Route',
+    riskRating: 'LOW',
+    description: 'A product configuration key can be modified by a broader local group than intended, although no direct security-control bypass was confirmed.',
+    notes: [
+      'Expected: security-sensitive configuration keys are writable only by the service and administrators. Reported: one non-sensitive test key inherits a broad local write ACL. Evidence reference (mock): registry-acl-audit.txt.',
+      'The reviewed key did not alter protection behavior in the test build. Root-cause hypothesis: installer permissions were copied from a general application settings template. Evidence reference (mock): installer-permissions-diff.csv.',
+      'Recommendation: narrow the ACL to required principals and add an installation verification test. Reassess if the key becomes security-sensitive in a later release. Evidence reference (mock): registry-acl-retest.pdf.',
+    ],
+  },
+  {
+    id: 'Ticket10',
+    title: 'Improper Certificate Validation on Sync',
+    riskRating: 'HIGH',
+    description: 'The synchronization client may accept an untrusted certificate under a fallback condition, weakening server identity checks for policy updates.',
+    notes: [
+      'Expected: sync fails if the peer certificate chain, hostname, or validity check fails. Reported: the test client continued with a warning when the lab certificate chain was untrusted. Evidence reference (mock): sync-certificate-test.txt.',
+      'The behavior was observed only with the diagnostic fallback enabled; no production endpoint was contacted. Root-cause hypothesis: a permissive validation callback remains wired into the fallback path. Evidence reference (mock): sync-tls-debug.log.',
+      'Recommendation: remove permissive validation, fail closed on all certificate errors, and test invalid chain, hostname mismatch, and expiry cases. Evidence reference (mock): certificate-validation-matrix.pdf.',
+    ],
+  },
+];
+
+function seedSampleAuditData() {
+  const tickets = readJson(files.tickets, []);
+  const notes = readJson(files.notes, []);
+  if (!Array.isArray(tickets) || !Array.isArray(notes)) {
+    throw new Error('Tickets and notes storage must contain JSON arrays.');
+  }
+  if (tickets.length > 0) return 0;
+
+  const seededAt = Date.now();
+  const sampleTickets = SAMPLE_AUDIT_CASES.map((sample, index) => ({
+    id: sample.id,
+    displayId: sample.id,
+    title: sample.title,
+    description: sample.description,
+    status: 'Open',
+    riskRating: sample.riskRating,
+    createdAt: new Date(seededAt - (SAMPLE_AUDIT_CASES.length - index) * 60_000).toISOString(),
+    author: 'Sample Audit',
+  }));
+  const sampleNotes = SAMPLE_AUDIT_CASES.flatMap((sample, ticketIndex) =>
+    sample.notes.map((text, noteIndex) => {
+      const createdAt = new Date(seededAt - (ticketIndex * 3 + noteIndex + 1) * 60 * 60_000).toISOString();
+      return {
+        id: `${sample.id}-note-${noteIndex + 1}`,
+        ticketId: sample.id,
+        text,
+        attachments: [],
+        createdAt,
+        updatedAt: createdAt,
+        author: 'Sample Audit',
+      };
+    }),
+  );
+  atomicWriteJsonPair(files.tickets, sampleTickets, files.notes, [...notes, ...sampleNotes], tickets, notes);
+  return sampleTickets.length;
+}
+
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return {
     salt,
@@ -181,6 +331,10 @@ if (!initialTickets || !initialNotes) {
 }
 if (!Array.isArray(initialTickets) || !Array.isArray(initialNotes)) {
   throw new Error('Tickets and notes storage must contain JSON arrays.');
+}
+const seededTicketCount = seedSampleAuditData();
+if (seededTicketCount > 0) {
+  console.log(`Seeded ${seededTicketCount} sample audit tickets and ${seededTicketCount * 3} sample notes.`);
 }
 
 const storedUsers = readJson(files.users, []);
