@@ -312,6 +312,15 @@
     .workspace-right > .panel > .panel-heading p { color: #cbd5e1; }
     .workspace-right > .panel > .panel-heading .active-ticket { color: #fb923c !important; }
     .workspace-right > .panel > .panel-heading .panel-kicker { color: #7dd3fc; }
+    .legal-footer { margin-top: 28px; color: #e2e8f0; background: #0c1530; }
+    .legal-footer-inner { width: min(1056px, calc(100% - 48px)); margin: 0 auto; padding: 30px 0 16px; }
+    .legal-footer-meta { display: flex; justify-content: space-between; gap: 12px 24px; margin-bottom: 16px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 8px; font-weight: 700; }
+    .legal-footer h2 { margin: 0 0 12px; color: #f8fafc; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+    .legal-footer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .legal-footer-card { min-width: 0; border: 1px solid #2a3a5a; border-radius: 9px; padding: 12px 13px; background: #111b32; }
+    .legal-footer-card h3 { margin: 0 0 6px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 8px; font-weight: 800; letter-spacing: .035em; }
+    .legal-footer-card p { margin: 0; color: #e2e8f0; font-size: 10px; line-height: 1.65; }
+    .legal-footer-copyright { margin-top: 13px; border-top: 1px solid #2a3a5a; padding-top: 10px; color: #f1f5f9; font-size: 9px; text-align: center; }
     @media (max-width: 930px) {
       .topbar-inner { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; }
       .brand-copy h1 { white-space: normal; }
@@ -336,6 +345,11 @@
       .metric strong { font-size: 21px; }
       .metric-icon { display: none; }
       .profile-card { padding: 14px; }
+    }
+    @media (max-width: 600px) {
+      .legal-footer-inner { width: calc(100% - 28px); padding-top: 23px; }
+      .legal-footer-meta { flex-direction: column; gap: 6px; }
+      .legal-footer-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 420px) {
       .topbar-inner { width: calc(100% - 26px); }
@@ -496,6 +510,34 @@
         </div>
       </div>
     </main>
+    <footer class="legal-footer">
+      <div class="legal-footer-inner">
+        <div class="legal-footer-meta">
+          <span>SIYANOAV TOTAL SECURITY / AUDIT &amp; DIAGNOSTIC REPORT</span>
+          <span>28 source pages reviewed&nbsp; | &nbsp;Triage estimates, not reproduced results</span>
+        </div>
+        <h2>LEGAL DISCLAIMER &amp; COMPLIANCE DECLARATION</h2>
+        <div class="legal-footer-grid">
+          <section class="legal-footer-card">
+            <h3>AUTHORIZATION &amp; CONSENT</h3>
+            <p>This technical audit and diagnostic evaluation were conducted with explicit prior authorization, written consent, and approval from the product owners and relevant stakeholders for pre-whitelabeling quality assurance and vulnerability identification.</p>
+          </section>
+          <section class="legal-footer-card">
+            <h3>INTELLECTUAL PROPERTY &amp; COPYRIGHT</h3>
+            <p>All product trademarks, logos, module names, and proprietary references, including “SiyanoAV Total Security,” belong exclusively to their respective owners. No copyright infringement or intellectual-property misuse is intended. Screenshot logs and visual evidence are used strictly for confidential audit and remediation purposes under applicable fair-use and authorized-testing terms.</p>
+          </section>
+          <section class="legal-footer-card">
+            <h3>PRO BONO / NON-COMMERCIAL STATUS</h3>
+            <p>This audit report was performed independently by Sanjay Ghelani of Sentinel Genesis Technologies Pvt Ltd as a complimentary, non-commercial service aimed solely at product hardening, defect triage, and pre-whitelabeling engineering evaluation. No financial charges or commercial billing were applied for this service.</p>
+          </section>
+          <section class="legal-footer-card">
+            <h3>CONFIDENTIALITY &amp; SCOPE</h3>
+            <p>The findings presented herein are triage estimates based on reported test logs and visual evidence; they do not independently verify product defects, test conditions, or root causes. This report is intended strictly for internal engineering remediation and stakeholder review and should be handled as confidential audit material.</p>
+          </section>
+        </div>
+        <div class="legal-footer-copyright">© 2026 Sentinel Genesis Technologies Pvt Ltd — Confidential Audit &amp; Technical Evaluation</div>
+      </div>
+    </footer>
   </div>
 
   <dialog id="ticket-dialog">
