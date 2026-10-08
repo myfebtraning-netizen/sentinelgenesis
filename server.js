@@ -25,6 +25,8 @@ const TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed'];
 const TICKET_SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const SUPPORTED_PRODUCTS = [
   DEFAULT_PRODUCT,
+  'Sentinel AVPro',
+  'Sentinel Endpoint Protection',
   'Mobile Security',
   'Endpoint Protection',
   'Cloud Shield',

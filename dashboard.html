@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a1128">
-  <title>SiyanoAV Total Security | Audit Desk</title>
+  <title>Sentinel Genesis | Product Diagnostic Portal</title>
   <style>
     :root {
       color-scheme: dark;
@@ -380,18 +380,19 @@
     .workspace-right > .panel > .panel-heading .active-ticket { color: #fb923c !important; }
     .workspace-right > .panel > .panel-heading .panel-kicker { color: #7dd3fc; }
     .legal-footer { margin-top: 28px; color: #e2e8f0; background: #0c1530; }
-    .legal-footer-inner { width: min(1056px, calc(100% - 48px)); margin: 0 auto; padding: 30px 0 16px; }
-    .legal-footer-meta { display: flex; justify-content: space-between; gap: 12px 24px; margin-bottom: 16px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 8px; font-weight: 700; }
-    .legal-footer h2 { margin: 0 0 12px; color: #f8fafc; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
-    .legal-footer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .legal-footer-card { min-width: 0; border: 1px solid #2a3a5a; border-radius: 9px; padding: 12px 13px; background: #111b32; }
-    .legal-footer-card h3 { margin: 0 0 6px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 8px; font-weight: 800; letter-spacing: .035em; }
-    .legal-footer-card p { margin: 0; color: #e2e8f0; font-size: 10px; line-height: 1.65; }
-    .legal-footer-copyright { margin-top: 13px; border-top: 1px solid #2a3a5a; padding-top: 10px; color: #f1f5f9; font-size: 9px; text-align: center; }
+    .legal-footer-inner { width: 100%; margin: 0; padding: 30px 0 16px; }
+    .legal-footer-meta { display: flex; justify-content: space-between; gap: 12px 24px; margin-bottom: 18px; padding: 0 18px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: .7rem; font-weight: 700; }
+    .legal-footer h2 { margin: 0 0 14px; padding: 0 18px; color: #f8fafc; font-size: 1.15rem; font-weight: 800; letter-spacing: .075em; }
+    .legal-footer-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .legal-footer-card { min-width: 0; border: 1px solid #2a3a5a; border-radius: 8px; padding: 16px; background: #111b32; }
+    .legal-footer-card h3 { margin: 0 0 9px; color: #dbeafe; font-family: ui-monospace, "Cascadia Code", monospace; font-size: .875rem; font-weight: 800; letter-spacing: .045em; }
+    .legal-footer-card p { margin: 0; color: #e2e8f0; font-size: .875rem; line-height: 1.65; }
+    .legal-footer-copyright { margin-top: 16px; border-top: 1px solid #2a3a5a; padding: 13px 18px 0; color: #f1f5f9; font-size: .8rem; text-align: center; }
     @media (max-width: 930px) {
       .topbar-inner { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; }
       .brand-copy h1 { white-space: normal; }
       .dashboard-grid { grid-template-columns: minmax(230px, .8fr) minmax(0, 1.3fr); }
+      .legal-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (min-width: 1200px) {
       .brand-copy h1 { white-space: nowrap; }
@@ -420,8 +421,11 @@
       .profile-card { padding: 14px; }
     }
     @media (max-width: 600px) {
-      .legal-footer-inner { width: calc(100% - 28px); padding-top: 23px; }
+      .legal-footer-inner { padding-top: 23px; }
       .legal-footer-meta { flex-direction: column; gap: 6px; }
+      .legal-footer h2 { padding-right: 14px; padding-left: 14px; }
+      .legal-footer-meta, .legal-footer-copyright { padding-right: 14px; padding-left: 14px; }
+      .legal-footer-card { padding: 13px; }
       .legal-footer-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 420px) {
@@ -452,7 +456,7 @@
           <img class="auth-logo image-fallback" src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
         </div>
         <p class="auth-subtitle">SENTINEL GENESIS TECHNOLOGIES</p>
-        <h1>SiyanoAV Remediation Hub</h1>
+        <h1>Sentinel Genesis Product Diagnostic Portal</h1>
         <p class="auth-tagline">Sign in to access the confidential audit and engineering workspace.</p>
       </div>
       <div class="auth-tabs" role="tablist" aria-label="Account options">
@@ -495,9 +499,9 @@
         <div class="brand">
           <img class="brand-logo image-fallback" src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
           <div class="brand-copy">
-            <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span>SECURITY REVIEW / EVIDENCE BRIEF</p>
-            <h1>SiyanoAV Total Security — Audit &amp; Diagnostic Report</h1>
-            <p>Official Security Audit &amp; Technical Evaluation — SiyanoAV Labs / Sentinel Genesis Technologies</p>
+            <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span>PRODUCT DIAGNOSTIC / QA EVALUATION</p>
+            <h1>Sentinel Genesis — Product Diagnostic &amp; QA Evaluation Desk</h1>
+            <p>Official Software Evaluation &amp; Bug Verification Platform — Sentinel Genesis Technologies</p>
           </div>
         </div>
         <div class="header-side">
@@ -542,7 +546,7 @@
     <main class="page">
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">SiyanoAV Labs · Security workspace</p>
+          <p class="eyebrow">Sentinel Genesis Technologies · Product QA workspace</p>
           <h2>Audit workspace overview</h2>
           <p>Track technical concerns, findings, remediation notes, and evidence.</p>
         </div>
@@ -660,29 +664,29 @@
     <footer class="legal-footer">
       <div class="legal-footer-inner">
         <div class="legal-footer-meta">
-          <span>SIYANOAV TOTAL SECURITY / AUDIT &amp; DIAGNOSTIC REPORT</span>
+          <span>SENTINEL GENESIS TECHNOLOGIES PVT LTD / PRODUCT DIAGNOSTIC &amp; QA EVALUATION</span>
           <span>28 source pages reviewed&nbsp; | &nbsp;Triage estimates, not reproduced results</span>
         </div>
         <h2>LEGAL DISCLAIMER &amp; COMPLIANCE DECLARATION</h2>
         <div class="legal-footer-grid">
           <section class="legal-footer-card">
             <h3>AUTHORIZATION &amp; CONSENT</h3>
-            <p>This technical audit and diagnostic evaluation were conducted with explicit prior authorization, written consent, and approval from the product owners and relevant stakeholders for pre-whitelabeling quality assurance and vulnerability identification.</p>
+            <p>Sentinel Genesis Technologies Pvt Ltd conducts each technical evaluation within the documented authorization, written consent, and scope provided for quality assurance and defect verification.</p>
           </section>
           <section class="legal-footer-card">
             <h3>INTELLECTUAL PROPERTY &amp; COPYRIGHT</h3>
-            <p>All product trademarks, logos, module names, and proprietary references, including “SiyanoAV Total Security,” belong exclusively to their respective owners. No copyright infringement or intellectual-property misuse is intended. Screenshot logs and visual evidence are used strictly for confidential audit and remediation purposes under applicable fair-use and authorized-testing terms.</p>
+            <p>Dashboard content, reports, and evaluation records prepared by Sentinel Genesis Technologies Pvt Ltd are subject to applicable intellectual-property rights. Materials included as evidence are handled solely for authorized technical review; no copyright infringement or intellectual-property misuse is intended.</p>
           </section>
           <section class="legal-footer-card">
             <h3>PRO BONO / NON-COMMERCIAL STATUS</h3>
-            <p>This audit report was performed independently by Sanjay Ghelani of Sentinel Genesis Technologies Pvt Ltd as a complimentary, non-commercial service aimed solely at product hardening, defect triage, and pre-whitelabeling engineering evaluation. No financial charges or commercial billing were applied for this service.</p>
+            <p>Sentinel Genesis Technologies Pvt Ltd provides this evaluation as a complimentary, non-commercial service for product hardening, defect triage, and software quality assurance. No financial charges or commercial billing are applied for this service.</p>
           </section>
           <section class="legal-footer-card">
             <h3>CONFIDENTIALITY &amp; SCOPE</h3>
-            <p>The findings presented herein are triage estimates based on reported test logs and visual evidence; they do not independently verify product defects, test conditions, or root causes. This report is intended strictly for internal engineering remediation and stakeholder review and should be handled as confidential audit material.</p>
+            <p>Findings prepared by Sentinel Genesis Technologies Pvt Ltd are triage estimates based on reported test logs and visual evidence; they do not independently verify defects, test conditions, or root causes. This report is confidential material for internal engineering remediation and stakeholder review.</p>
           </section>
         </div>
-        <div class="legal-footer-copyright">© 2026 Sentinel Genesis Technologies Pvt Ltd — Confidential Audit &amp; Technical Evaluation</div>
+        <div class="legal-footer-copyright">© 2026 Sentinel Genesis Technologies Pvt Ltd — Confidential Product Diagnostic &amp; QA Evaluation</div>
       </div>
     </footer>
   </div>
@@ -749,6 +753,11 @@
     let scrollSelectionTimer = null;
     let pendingScrollTicketId = null;
     let manualSelectionOverrideUntil = 0;
+    const DEFAULT_PRODUCTS = [
+      'SiyanoAV Total Security',
+      'Sentinel AVPro',
+      'Sentinel Endpoint Protection',
+    ];
     let supportedProducts = [];
     let selectedProduct = 'all';
     let selectedSeverity = 'all';
@@ -846,7 +855,7 @@
     }
 
     function setProductOptions(products) {
-      supportedProducts = products;
+      supportedProducts = [...new Set([...DEFAULT_PRODUCTS, ...products])];
       const filter = document.getElementById('product-filter');
       const filterValue = selectedProduct;
       filter.replaceChildren(new Option('All Products', 'all'));
@@ -1123,7 +1132,7 @@
       </div>
       <div class="masthead-copy">
         <div class="brand">Sentinel Genesis Technologies</div>
-        <div class="brand-name">SiyanoAV Labs · Audit &amp; Diagnostic Report</div>
+        <div class="brand-name">Sentinel Genesis Technologies Pvt Ltd · Product Diagnostic &amp; QA Evaluation</div>
         <div class="masthead-meta">
           <span><strong>Prepared for:</strong> SiyanoAV Total Security</span>
           <span><strong>Generated:</strong> ${escapeReportHTML(reportDate(generatedAt, true))}</span>
