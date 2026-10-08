@@ -469,6 +469,7 @@
         <div class="header-actions">
           <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
           <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
+          <button class="button primary small" id="executive-report-button" type="button">Export Report</button>
           <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
           <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
           <input type="file" id="importFileInput" accept=".zip" hidden>
@@ -758,6 +759,304 @@
         setTimeout(() => URL.revokeObjectURL(backup), 1000);
       } catch (error) {
         window.alert(error.message);
+      }
+    }
+
+    function reportQueryParameters(tags) {
+      const query = new URLSearchParams();
+      const search = ticketSearch.value.trim();
+      if (search) query.set('search', search);
+      if (selectedSeverity !== 'all') query.set('severity', selectedSeverity);
+      if (selectedStatus !== 'all') query.set('status', selectedStatus);
+      if (selectedProduct !== 'all') query.set('product', selectedProduct);
+      for (const tag of tags) query.append('tag', tag);
+      return query;
+    }
+
+    function escapeReportHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character]);
+    }
+
+    function reportDate(value, includeTime = false) {
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return 'Date unavailable';
+      return date.toLocaleString(undefined, includeTime
+        ? { dateStyle: 'medium', timeStyle: 'short' }
+        : { dateStyle: 'medium' });
+    }
+
+    function executiveReportHTML(report, filters) {
+      const { summary, tickets: reportTickets, generatedAt } = report;
+      const auditor = currentUser?.username || 'Authenticated auditor';
+      const filterLabels = [];
+      if (filters.search) filterLabels.push(`Keyword: ${filters.search}`);
+      if (filters.severity !== 'all') filterLabels.push(`Severity: ${filters.severity.toUpperCase()}`);
+      if (filters.status !== 'all') filterLabels.push(`Status: ${filters.status}`);
+      if (filters.product !== 'all') filterLabels.push(`Product: ${filters.product}`);
+      for (const tag of filters.tags) filterLabels.push(`Tag: #${tag}`);
+
+      const metric = (label, value, tone = '') => `
+        <article class="metric ${tone}">
+          <span class="metric-label">${escapeReportHTML(label)}</span>
+          <strong>${escapeReportHTML(value)}</strong>
+        </article>`;
+      const statusTone = (value) => {
+        const status = String(value || 'Open').trim().toLowerCase();
+        if (status === 'open') return 'status-open';
+        if (status === 'resolved' || status === 'closed') return 'status-resolved';
+        if (status === 'in progress' || status === 'in-progress') return 'status-progress';
+        return 'status-other';
+      };
+      const severityTone = (value) => {
+        const severity = String(value || '').trim().toLowerCase();
+        if (severity === 'high' || severity === 'critical') return 'severity-high';
+        if (severity === 'medium' || severity === 'moderate') return 'severity-medium';
+        if (severity === 'low') return 'severity-low';
+        return 'severity-other';
+      };
+      const ticketTableRows = reportTickets.map((ticket) => `
+        <tr>
+          <td>${escapeReportHTML(ticket.displayId || ticket.id)}</td>
+          <td>${escapeReportHTML(ticket.title || 'Untitled concern')}</td>
+          <td>${escapeReportHTML(ticket.product || 'Unspecified')}</td>
+          <td><span class="badge ${statusTone(ticket.status)}">${escapeReportHTML(ticket.status || 'Open')}</span></td>
+          <td><span class="badge ${severityTone(ticket.severity || ticket.riskRating)}">${escapeReportHTML(ticket.severity || ticket.riskRating || 'Unrated')}</span></td>
+        </tr>`).join('');
+      const ticketSections = reportTickets.length ? reportTickets.map((ticket) => {
+        const evidence = ticket.notes?.length ? ticket.notes.map((note) => {
+          const attachmentList = Array.isArray(note.attachments) && note.attachments.length
+            ? `<ul class="attachments">${note.attachments.map((attachment) => `
+                <li>${escapeReportHTML(attachment.name || attachment.fileName || 'Evidence attachment')}
+                  ${Number.isFinite(attachment.size) && attachment.size > 0 ? `<span>(${(attachment.size / 1024 / 1024).toFixed(1)} MB)</span>` : ''}
+                </li>`).join('')}</ul>`
+            : '';
+          return `
+            <article class="evidence">
+              <div class="evidence-meta">
+                <span><span class="evidence-label">Recorded by</span><strong>${escapeReportHTML(note.author || 'Unknown author')}</strong></span>
+                <span><span class="evidence-label">Recorded</span><time>${escapeReportHTML(reportDate(note.createdAt, true))}</time></span>
+              </div>
+              <div class="evidence-content">
+                ${note.text ? `<span class="evidence-label">Evidence details</span><p>${escapeReportHTML(note.text)}</p>` : ''}
+                ${attachmentList ? `<div class="evidence-attachments"><span class="evidence-label">Attachments</span>${attachmentList}</div>` : ''}
+              </div>
+            </article>`;
+        }).join('') : '<p class="muted">No evidence notes recorded for this concern.</p>';
+        const tags = Array.isArray(ticket.tags) && ticket.tags.length
+          ? `<p class="ticket-tags">${ticket.tags.map((tag) => `<span>#${escapeReportHTML(tag)}</span>`).join(' ')}</p>`
+          : '';
+        return `
+          <section class="ticket">
+            <div class="ticket-heading">
+              <div>
+                <p class="ticket-id">${escapeReportHTML(ticket.displayId || ticket.id)}</p>
+                <h2>${escapeReportHTML(ticket.title || 'Untitled concern')}</h2>
+              </div>
+              <div class="badges">
+                <span class="badge ${statusTone(ticket.status)}">${escapeReportHTML(ticket.status || 'Open')}</span>
+                <span class="badge ${severityTone(ticket.severity || ticket.riskRating)}">${escapeReportHTML(ticket.severity || ticket.riskRating || 'Unrated')}</span>
+              </div>
+            </div>
+            <p class="description">${escapeReportHTML(ticket.description || 'No description provided.')}</p>
+            ${tags}
+            <p class="ticket-meta">${escapeReportHTML(ticket.product || 'Product unspecified')}
+              · Reported by ${escapeReportHTML(ticket.author || 'Unknown author')}
+              · Created ${escapeReportHTML(reportDate(ticket.createdAt))}</p>
+            <h3>Evidence &amp; Audit Notes (${(ticket.notes || []).length})</h3>
+            <div class="evidence-list">${evidence}</div>
+          </section>`;
+      }).join('') : '<p class="empty">No concerns match the selected filters.</p>';
+
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Executive Summary Audit Report</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif; color: #172033; background: #f1f5f9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 18px; }
+    .report { width: min(1080px, 100%); margin: 0 auto; padding: 34px 42px 42px; background: #fff; box-shadow: 0 12px 42px rgba(15,23,42,.12); }
+    .toolbar { display: flex; justify-content: end; gap: 10px; margin: 0 auto 16px; width: min(1080px, 100%); }
+    .toolbar button { border: 0; border-radius: 7px; padding: 10px 16px; color: #fff; background: #1d4ed8; font-weight: 700; cursor: pointer; }
+    .toolbar .close { color: #334155; background: #e2e8f0; }
+    .masthead { display: grid; grid-template-columns: 260px minmax(0, 1fr) 128px; align-items: center; gap: 18px; min-height: 164px; margin: -34px -42px 0; padding: 24px 36px; color: #fff; background: #0a192f; border-bottom: 4px solid #22d3ee; }
+    .brand-logo { display: flex; align-items: center; width: 250px; max-width: 280px; justify-self: start; border: 1px solid rgba(255,255,255,.75); border-radius: 8px; padding: 2px; background: #fff; }
+    .brand-logo img { display: block; width: 100%; height: auto; object-fit: contain; }
+    .masthead-copy { min-width: 0; text-align: center; }
+    .brand { color: #fff; font-size: 17px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .brand-name { margin-top: 8px; color: #a5f3fc; font-size: 16px; font-weight: 700; letter-spacing: .01em; }
+    .masthead-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px 22px; margin-top: 15px; color: #cbd5e1; font-size: 11px; }
+    .masthead-meta strong { color: #67e8f9; font-weight: 700; }
+    .confidential { justify-self: end; border: 1px solid rgba(103,232,249,.65); border-radius: 999px; padding: 8px 12px; color: #a5f3fc; background: rgba(8,145,178,.16); font-size: 9px; font-weight: 800; letter-spacing: .14em; white-space: nowrap; }
+    h1 { margin: 27px 0 7px; color: #0f172a; font-size: 29px; letter-spacing: -.035em; }
+    .subtitle { margin: 0; color: #64748b; font-size: 13px; }
+    .metadata { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 13px; color: #475569; font-size: 11px; }
+    .metadata strong { color: #172033; }
+    .section-title { margin: 30px 0 12px; color: #0f172a; font-size: 15px; }
+    .filters { color: #475569; font-size: 11px; }
+    .ticket-register { width: 100%; border-collapse: separate; border-spacing: 0; margin: 14px 0 20px; overflow: hidden; border: 1px solid #dbe3ed; border-radius: 8px; font-size: 10px; }
+    .ticket-register th { padding: 10px 9px; color: #fff; background: #172033; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; }
+    .ticket-register td { border-bottom: 1px solid #e2e8f0; padding: 9px; vertical-align: top; overflow-wrap: anywhere; }
+    .ticket-register tbody tr:nth-child(even) { background: #f1f5f9; }
+    .ticket-register tbody tr:last-child td { border-bottom: 0; }
+    .ticket-register tr { break-inside: avoid; page-break-inside: avoid; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .metric { min-height: 82px; border: 1px solid #dbe3ed; border-top: 3px solid #2563eb; border-radius: 8px; padding: 13px 14px; background: #fff; box-shadow: 0 4px 12px rgba(15,23,42,.06); break-inside: avoid; page-break-inside: avoid; }
+    .metric.open { border-top-color: #dc2626; }
+    .metric.resolved { border-top-color: #16a34a; }
+    .metric.high { border-top-color: #ea580c; }
+    .metric.medium { border-top-color: #d97706; }
+    .metric.low { border-top-color: #16a34a; }
+    .metric-label { display: block; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 8px; color: #0f172a; font-size: 25px; line-height: 1; }
+    .ticket { margin-top: 18px; border: 1px solid #dbe3ed; border-radius: 9px; padding: 18px 20px; box-shadow: 0 4px 14px rgba(15,23,42,.045); break-inside: avoid; page-break-inside: avoid; }
+    .ticket-heading { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+    .ticket-id { margin: 0 0 5px; color: #1d4ed8; font: 700 10px ui-monospace, monospace; }
+    .ticket h2 { margin: 0; font-size: 16px; line-height: 1.4; }
+    .badges { display: flex; flex: 0 0 auto; gap: 5px; }
+    .badge { display: inline-block; border: 1px solid transparent; border-radius: 999px; padding: 5px 8px; color: #334155; background: #f1f5f9; font-size: 9px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+    .badge.status-open { color: #0e7490; border-color: #a5f3fc; background: #ecfeff; }
+    .badge.status-resolved { color: #166534; border-color: #bbf7d0; background: #f0fdf4; }
+    .badge.status-progress { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
+    .badge.status-other, .badge.severity-other { color: #475569; border-color: #cbd5e1; background: #f8fafc; }
+    .badge.severity-high { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+    .badge.severity-medium { color: #c2410c; border-color: #fed7aa; background: #fff7ed; }
+    .badge.severity-low { color: #15803d; border-color: #bbf7d0; background: #f0fdf4; }
+    .description { margin: 12px 0 0; color: #334155; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ticket-tags { display: flex; gap: 5px; flex-wrap: wrap; margin: 10px 0 0; }
+    .ticket-tags span { border-radius: 999px; padding: 4px 7px; color: #1d4ed8; background: #eff6ff; font-size: 9px; font-weight: 700; }
+    .ticket-meta { margin: 11px 0 0; color: #64748b; font-size: 10px; }
+    .ticket h3 { margin: 17px 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .evidence-list { display: grid; gap: 8px; }
+    .evidence { overflow: hidden; border: 1px solid #dbe3ed; border-radius: 7px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
+    .evidence-meta { display: flex; justify-content: space-between; gap: 10px; padding: 8px 11px; color: #f8fafc; background: #172033; font-size: 10px; }
+    .evidence-meta > span { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
+    .evidence-label { display: block; margin-bottom: 4px; color: #0891b2; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .evidence-meta .evidence-label { display: inline; margin: 0; color: #67e8f9; }
+    .evidence-meta time { color: #cbd5e1; }
+    .evidence-content { padding: 10px 11px; }
+    .evidence p { margin: 0; color: #334155; font-size: 11px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .evidence-attachments { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+    .attachments { margin: 8px 0 0; padding-left: 18px; color: #475569; font-size: 10px; }
+    .attachments span { color: #64748b; }
+    .muted, .empty { color: #64748b; font-size: 11px; }
+    .empty { border: 1px dashed #cbd5e1; border-radius: 6px; padding: 24px; text-align: center; }
+    footer { margin-top: 28px; border-top: 1px solid #dbe3ed; padding-top: 12px; color: #64748b; font-size: 9px; line-height: 1.5; }
+    @media (max-width: 650px) {
+      body { padding: 12px; }
+      .report { padding: 25px 18px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .ticket-heading { flex-direction: column; }
+      .masthead { grid-template-columns: 86px minmax(0, 1fr) 82px; gap: 8px; min-height: 130px; margin: -25px -18px 0; padding: 18px 12px; }
+      .brand-logo { width: 82px; max-width: 82px; padding: 2px; }
+      .brand { font-size: 11px; letter-spacing: .08em; }
+      .brand-name { margin-top: 5px; font-size: 12px; }
+      .masthead-meta { gap: 6px 10px; margin-top: 10px; font-size: 9px; }
+      .confidential { padding: 6px 8px; font-size: 8px; }
+      .ticket-register { font-size: 9px; }
+      .ticket-register th, .ticket-register td { padding: 6px 4px; }
+      h1 { font-size: 24px; }
+    }
+    @page { size: auto; margin: 14mm; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      html, body { width: 100%; margin: 0; padding: 0; overflow: visible !important; background: #fff; }
+      body::-webkit-scrollbar { display: none; }
+      .toolbar, .close { display: none !important; }
+      .report { width: 100%; margin: 0; padding: 0; box-shadow: none; }
+      .masthead { margin: 0; break-inside: avoid; page-break-inside: avoid; }
+      .metrics, .ticket, .metric, .evidence { break-inside: avoid; page-break-inside: avoid; }
+      .ticket-register thead { display: table-header-group; }
+      .ticket-register tr { break-inside: avoid; page-break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="toolbar" aria-label="Report actions">
+    <button type="button" onclick="window.print()">Print / Save as PDF</button>
+    <button class="close" type="button" onclick="window.close()">Close Report</button>
+  </nav>
+  <main class="report">
+    <header class="masthead">
+      <div class="brand-logo">
+        <img src="/images/logo.png" alt="Sentinel Genesis Technologies logo">
+      </div>
+      <div class="masthead-copy">
+        <div class="brand">Sentinel Genesis Technologies</div>
+        <div class="brand-name">SiyanoAV Labs · Audit &amp; Diagnostic Report</div>
+        <div class="masthead-meta">
+          <span><strong>Prepared for:</strong> SiyanoAV Total Security</span>
+          <span><strong>Generated:</strong> ${escapeReportHTML(reportDate(generatedAt, true))}</span>
+        </div>
+      </div>
+      <span class="confidential">CONFIDENTIAL</span>
+    </header>
+    <h1>Executive Summary</h1>
+    <p class="subtitle">Product testing concerns, current status, severity, and supporting audit evidence.</p>
+    <div class="metadata">
+      <span><strong>Prepared by:</strong> ${escapeReportHTML(auditor)}</span>
+    </div>
+    <h2 class="section-title">Summary at a glance</h2>
+    <p class="filters">${filterLabels.length ? `Applied filters: ${filterLabels.map(escapeReportHTML).join(' · ')}` : 'Scope: All tickets'}</p>
+    <section class="metrics" aria-label="Report summary statistics">
+      ${metric('Total Concerns', summary.totalConcerns)}
+      ${metric('Open Concerns', summary.open)}
+      ${metric('Resolved Concerns', summary.resolved, 'resolved')}
+      ${metric('Closed Concerns', summary.closed)}
+      ${metric('High Severity', summary.high, 'high')}
+      ${metric('Medium Severity', summary.medium, 'medium')}
+      ${metric('Low Severity', summary.low, 'low')}
+      ${metric('Evidence Notes', summary.evidenceNotes)}
+    </section>
+    <h2 class="section-title">Itemized concerns &amp; evidence</h2>
+    ${reportTickets.length ? `<table class="ticket-register">
+      <thead><tr><th>ID</th><th>Concern</th><th>Product</th><th>Status</th><th>Severity</th></tr></thead>
+      <tbody>${ticketTableRows}</tbody>
+    </table>` : ''}
+    ${ticketSections}
+    <footer>Confidential audit material. Report contents reflect the ticket and evidence records available when this report was generated. This report does not independently validate reported behavior.</footer>
+  </main>
+</body>
+</html>`;
+    }
+
+    async function exportExecutiveSummary() {
+      const reportWindow = window.open('', '_blank');
+      if (!reportWindow) {
+        showToast('Allow pop-ups to open the executive summary report.', true);
+        return;
+      }
+      const button = document.getElementById('executive-report-button');
+      button.disabled = true;
+      reportWindow.document.write('<!doctype html><title>Preparing report…</title><p style="font-family:Arial,sans-serif;padding:2rem">Preparing executive summary…</p>');
+      try {
+        const filters = {
+          search: ticketSearch.value.trim(),
+          severity: selectedSeverity,
+          status: selectedStatus,
+          product: selectedProduct,
+          tags: [...selectedTags],
+        };
+        const query = reportQueryParameters(filters.tags);
+        const report = await api(`/api/reports/summary${query.size ? `?${query}` : ''}`);
+        reportWindow.document.open();
+        reportWindow.document.write(executiveReportHTML(report, filters));
+        reportWindow.document.close();
+        reportWindow.focus();
+      } catch (error) {
+        reportWindow.close();
+        showToast(`Could not generate report: ${error.message}`, true);
+      } finally {
+        button.disabled = false;
       }
     }
 
@@ -1629,6 +1928,7 @@
 
     document.getElementById('record-button').addEventListener('click', toggleRecording);
     document.getElementById('export-backup-button').addEventListener('click', exportBackup);
+    document.getElementById('executive-report-button').addEventListener('click', exportExecutiveSummary);
     document.getElementById('import-backup-button').addEventListener('click', () => {
       const fileInput = document.getElementById('importFileInput');
       fileInput.value = '';

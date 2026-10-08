@@ -767,6 +767,48 @@ app.get('/api/tickets', (req, res, next) => {
   }
 });
 
+app.get('/api/reports/summary', (req, res, next) => {
+  try {
+    const tickets = filterTickets(getTickets(), req.query);
+    const ticketIds = new Set(tickets.map((ticket) => ticket.id));
+    const notes = getNotes().filter((note) => ticketIds.has(note.ticketId));
+    const notesByTicket = new Map();
+    for (const note of notes) {
+      if (!notesByTicket.has(note.ticketId)) notesByTicket.set(note.ticketId, []);
+      notesByTicket.get(note.ticketId).push(note);
+    }
+
+    const statusCounts = { open: 0, inProgress: 0, resolved: 0, closed: 0 };
+    const severityCounts = { high: 0, medium: 0, low: 0 };
+    for (const ticket of tickets) {
+      const status = normalizedTicketStatus(ticket.status || 'Open');
+      if (status === 'open') statusCounts.open += 1;
+      else if (status === 'in progress') statusCounts.inProgress += 1;
+      else if (status === 'resolved') statusCounts.resolved += 1;
+      else if (status === 'closed') statusCounts.closed += 1;
+
+      const severity = String(ticket.severity || ticket.riskRating || '').toLocaleLowerCase();
+      if (Object.hasOwn(severityCounts, severity)) severityCounts[severity] += 1;
+    }
+
+    return res.json({
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalConcerns: tickets.length,
+        ...statusCounts,
+        ...severityCounts,
+        evidenceNotes: notes.length,
+      },
+      tickets: tickets.map((ticket) => ({
+        ...ticket,
+        notes: notesByTicket.get(ticket.id) || [],
+      })),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post('/api/tickets', (req, res, next) => {
   try {
     const { title, description, product = DEFAULT_PRODUCT, tags = [] } = req.body || {};
