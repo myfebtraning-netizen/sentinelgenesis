@@ -6,6 +6,7 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
+    "tags": ["HIPS", "Malware", "RealTimeScan"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:33:00.000Z",
     "product": "SiyanoAV Total Security"
@@ -17,6 +18,7 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
+    "tags": ["HIPS", "SelfProtection"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:35:00.000Z",
     "product": "SiyanoAV Total Security"
@@ -28,6 +30,7 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
+    "tags": ["Firewall", "Network"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:39:00.000Z",
     "product": "SiyanoAV Total Security"
@@ -39,6 +42,7 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
+    "tags": ["ParentalControl", "BrowserSafety", "Whitelist"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:40:00.000Z",
     "product": "SiyanoAV Total Security"
@@ -50,6 +54,7 @@
     "status": "Open",
     "severity": "MEDIUM",
     "riskRating": "MEDIUM",
+    "tags": ["ParentalControl", "BrowserSafety", "WebFiltering"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:41:00.000Z",
     "product": "SiyanoAV Total Security"
@@ -61,6 +66,7 @@
     "status": "Open",
     "severity": "MEDIUM",
     "riskRating": "MEDIUM",
+    "tags": ["FileHandling", "Quarantine"],
     "author": "Admin",
     "createdAt": "2026-10-08T07:42:00.000Z",
     "product": "SiyanoAV Total Security"

@@ -256,7 +256,21 @@
     .panel-heading p { color: #64748b; }
     .panel-kicker { color: #2563eb; }
     .ticket-list { max-height: 680px; overflow-y: auto; padding: 2px 5px 2px 2px; }
-    .ticket-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 14px; }
+    .ticket-controls { display: grid; gap: 8px; margin-bottom: 14px; }
+    .ticket-search-row, .ticket-filter-row { display: flex; align-items: center; gap: 8px; }
+    .ticket-search-row .ticket-search { flex: 1 1 auto; }
+    .ticket-filter-row { flex-wrap: wrap; }
+    .ticket-filter { min-height: 36px; min-width: 105px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 28px 7px 9px; color: #334155; background: #ffffff; font-size: 11px; }
+    .ticket-filter.product-filter { flex: 1 1 175px; }
+    .ticket-tag-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ticket-tag-filters[hidden], .reset-filters[hidden] { display: none; }
+    .ticket-tag-label { color: #64748b; font-size: 10px; font-weight: 700; }
+    .tag-chip { border: 1px solid #cbd5e1; border-radius: 999px; padding: 5px 9px; color: #475569; background: #f8fafc; font-size: 10px; font-weight: 700; }
+    .tag-chip:hover, .tag-chip[aria-pressed="true"] { border-color: #60a5fa; color: #1d4ed8; background: #eff6ff; }
+    .ticket-tag-list { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+    .ticket-tag { border-radius: 999px; padding: 3px 7px; color: #1d4ed8; background: #dbeafe; font-size: 9px; font-weight: 700; }
+    .reset-filters { min-height: 36px; border: 1px solid #fecaca; border-radius: 8px; padding: 7px 10px; color: #b91c1c; background: #fff7f7; font-size: 10px; font-weight: 750; }
+    .reset-filters:hover { border-color: #f87171; background: #fef2f2; }
     .ticket-search { width: 100%; min-height: 40px; min-width: 0; margin: 0; border-color: #cbd5e1; border-radius: 9px; padding: 9px 12px; color: #0f172a; background: #ffffff; font-size: 12px; }
     .ticket-search:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,.14); }
     .ticket-search::placeholder { color: #64748b; }
@@ -457,10 +471,6 @@
           <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
           <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
           <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
-          <label class="sr-only" for="product-filter">Select Product</label>
-          <select class="product-filter" id="product-filter" aria-label="Select Product">
-            <option value="all">All Products</option>
-          </select>
           <input type="file" id="importFileInput" accept=".zip" hidden>
           <span class="toolbar-status" id="sync-state" aria-live="polite">Connected</span>
         </div>
@@ -482,8 +492,33 @@
       <div class="dashboard-grid">
         <aside class="panel ticket-sidebar">
           <div class="ticket-controls">
-            <input class="ticket-search" id="ticket-search" type="search" placeholder="Search tickets or keywords..." aria-label="Search tickets or keywords" aria-controls="ticket-list">
-            <button class="ticket-sort" id="ticket-sort" type="button" aria-controls="ticket-list" aria-label="Sort ticket order ascending">⇅ Sort: Ticket01 → 10</button>
+            <div class="ticket-search-row">
+              <input class="ticket-search" id="ticket-search" type="search" placeholder="Search title, description, or author..." aria-label="Search ticket titles, descriptions, or authors" aria-controls="ticket-list">
+              <button class="ticket-sort" id="ticket-sort" type="button" aria-controls="ticket-list" aria-label="Sort ticket order ascending">⇅ Sort: Ticket01 → 10</button>
+            </div>
+            <div class="ticket-filter-row" aria-label="Ticket filters">
+              <label class="sr-only" for="severity-filter">Filter by severity</label>
+              <select class="ticket-filter" id="severity-filter" aria-label="Filter by severity">
+                <option value="all">All Severities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <label class="sr-only" for="status-filter">Filter by status</label>
+              <select class="ticket-filter" id="status-filter" aria-label="Filter by status">
+                <option value="all">All Statuses</option>
+                <option value="open">Open</option>
+                <option value="in progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+              <label class="sr-only" for="product-filter">Select Product</label>
+              <select class="ticket-filter product-filter" id="product-filter" aria-label="Select Product">
+                <option value="all">All Products</option>
+              </select>
+              <button class="reset-filters" id="reset-ticket-filters" type="button" hidden>Reset Filters</button>
+            </div>
+            <div class="ticket-tag-filters" id="ticket-tag-filters" aria-label="Filter by tags" hidden></div>
           </div>
           <div class="panel-heading">
             <div><span class="panel-kicker">Issue register</span><h3>Tracked Tickets</h3><p>Select an item to open its details and evidence.</p></div>
@@ -565,6 +600,7 @@
         <div class="field"><label for="ticket-product">Product Category</label><select id="ticket-product" name="product" required></select></div>
         <div class="field"><label for="ticket-title">Title of Issue</label><input id="ticket-title" name="title" maxlength="200" required placeholder="Summarize the technical concern"></div>
         <div class="field"><label for="ticket-description">Description</label><textarea id="ticket-description" name="description" maxlength="10000" required placeholder="Describe the observed behavior, impact, and context…"></textarea></div>
+        <div class="field"><label for="ticket-tags">Tags (comma-separated, optional)</label><input id="ticket-tags" name="tags" maxlength="400" placeholder="e.g. HIPS, Malware, RealTimeScan"></div>
         <button class="button primary" type="submit">Create ticket</button>
       </form>
     </div>
@@ -616,6 +652,9 @@
     let noteSnapshot = null;
     let supportedProducts = [];
     let selectedProduct = 'all';
+    let selectedSeverity = 'all';
+    let selectedStatus = 'all';
+    const selectedTags = new Set();
     let noteCounts = {};
     let attachmentObjectUrls = [];
     let previewObjectUrl = null;
@@ -896,6 +935,101 @@
       return tickets.filter((ticket) => selectedProduct === 'all' || ticket.product === selectedProduct);
     }
 
+    function getTicketTags(ticket) {
+      if (!Array.isArray(ticket.tags)) return [];
+      return [...new Map(ticket.tags
+        .filter((tag) => typeof tag === 'string')
+        .map((tag) => tag.trim().replace(/^#/, '').trim())
+        .filter(Boolean)
+        .map((tag) => [tag.toLocaleLowerCase(), tag])).values()];
+    }
+
+    function getAvailableTags() {
+      return [...new Map(tickets.flatMap(getTicketTags)
+        .map((tag) => [tag.toLocaleLowerCase(), tag])).values()]
+        .sort((first, second) => first.localeCompare(second));
+    }
+
+    function renderTagFilters() {
+      const container = document.getElementById('ticket-tag-filters');
+      container.replaceChildren();
+      const tags = getAvailableTags();
+      const availableTags = new Set(tags.map((tag) => tag.toLocaleLowerCase()));
+      for (const selectedTag of selectedTags) {
+        if (!availableTags.has(selectedTag)) selectedTags.delete(selectedTag);
+      }
+      container.hidden = !tags.length;
+      if (!tags.length) return;
+
+      const label = document.createElement('span');
+      label.className = 'ticket-tag-label';
+      label.textContent = 'Tags:';
+      container.append(label);
+      for (const tag of tags) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'tag-chip';
+        button.textContent = `#${tag}`;
+        button.setAttribute('aria-pressed', String(selectedTags.has(tag.toLocaleLowerCase())));
+        button.addEventListener('click', () => {
+          const key = tag.toLocaleLowerCase();
+          if (selectedTags.has(key)) selectedTags.delete(key);
+          else selectedTags.add(key);
+          renderTagFilters();
+          renderTickets();
+        });
+        container.append(button);
+      }
+    }
+
+    function hasActiveTicketFilters() {
+      return Boolean(
+        ticketSearch.value.trim()
+        || selectedSeverity !== 'all'
+        || selectedStatus !== 'all'
+        || selectedProduct !== 'all'
+        || selectedTags.size,
+      );
+    }
+
+    function ticketMatchesFilters(ticket) {
+      const query = ticketSearch.value.trim().toLocaleLowerCase();
+      if (query) {
+        const searchableText = [ticket.title, ticket.description, ticket.author]
+          .filter((value) => typeof value === 'string')
+          .join(' ')
+          .toLocaleLowerCase();
+        if (!searchableText.includes(query)) return false;
+      }
+      if (selectedSeverity !== 'all') {
+        const severity = String(ticket.severity || ticket.riskRating || '').toLocaleLowerCase();
+        if (severity !== selectedSeverity) return false;
+      }
+      if (selectedStatus !== 'all') {
+        const status = String(ticket.status || '').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+        if (status !== selectedStatus) return false;
+      }
+      const ticketTagNames = new Set(getTicketTags(ticket).map((tag) => tag.toLocaleLowerCase()));
+      return [...selectedTags].every((tag) => ticketTagNames.has(tag));
+    }
+
+    function getFilteredTickets() {
+      return getProductTickets().filter(ticketMatchesFilters);
+    }
+
+    function resetTicketFilters() {
+      ticketSearch.value = '';
+      selectedSeverity = 'all';
+      selectedStatus = 'all';
+      selectedProduct = 'all';
+      selectedTags.clear();
+      document.getElementById('severity-filter').value = 'all';
+      document.getElementById('status-filter').value = 'all';
+      document.getElementById('product-filter').value = 'all';
+      renderTagFilters();
+      renderTickets();
+    }
+
     function updateMetrics(productTickets = getProductTickets()) {
       document.getElementById('total-count').textContent = productTickets.length;
       document.getElementById('open-count').textContent = productTickets.filter((ticket) => ticket.status === 'Open').length;
@@ -906,13 +1040,22 @@
     }
 
     ticketSearch.addEventListener('input', renderTickets);
+    document.getElementById('severity-filter').addEventListener('change', (event) => {
+      selectedSeverity = event.currentTarget.value;
+      renderTickets();
+    });
+    document.getElementById('status-filter').addEventListener('change', (event) => {
+      selectedStatus = event.currentTarget.value;
+      renderTickets();
+    });
+    document.getElementById('reset-ticket-filters').addEventListener('click', resetTicketFilters);
     ticketSort.addEventListener('click', () => {
       sortAscending = !sortAscending;
       renderTickets();
     });
     document.getElementById('product-filter').addEventListener('change', async (event) => {
       selectedProduct = event.currentTarget.value;
-      const productTickets = getProductTickets();
+      const productTickets = getFilteredTickets();
       if (currentTicketId && !productTickets.some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
       renderTickets();
       if (productTickets.length && !currentTicketId) await selectTicket(productTickets[0].id);
@@ -920,23 +1063,31 @@
         noteSnapshot = null;
         renderSelectedTicket(null);
         document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
-        notesFeed.innerHTML = '<div class="empty">No tickets are available for this product.</div>';
+        notesFeed.innerHTML = hasActiveTicketFilters()
+          ? '<div class="empty">No tickets match your filter criteria.</div>'
+          : '<div class="empty">No tickets are available for this product.</div>';
       }
     });
 
     function renderTickets() {
       const productTickets = getProductTickets();
       updateMetrics(productTickets);
+      const resetButton = document.getElementById('reset-ticket-filters');
+      resetButton.hidden = !hasActiveTicketFilters();
       ticketList.replaceChildren();
       if (!productTickets.length) {
         ticketList.innerHTML = tickets.length
-          ? '<div class="empty">No tickets are available for this product.</div>'
+          ? (hasActiveTicketFilters()
+            ? '<div class="empty">No tickets match your filter criteria.</div>'
+            : '<div class="empty">No tickets are available for this product.</div>')
           : '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
         currentTicketId = null;
         renderSelectedTicket(null);
         document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
         notesFeed.innerHTML = tickets.length
-          ? '<div class="empty">No tickets are available for this product.</div>'
+          ? (hasActiveTicketFilters()
+            ? '<div class="empty">No tickets match your filter criteria.</div>'
+            : '<div class="empty">No tickets are available for this product.</div>')
           : '<div class="empty">Create a ticket to start its evidence log.</div>';
         return;
       }
@@ -964,23 +1115,24 @@
       ticketSort.textContent = sortAscending ? '⇅ Sort: Ticket01 → 10' : '⇅ Sort: Ticket10 → 01';
       ticketSort.setAttribute('aria-label', `Sort ticket order ${sortAscending ? 'ascending' : 'descending'}`);
       ticketSort.setAttribute('aria-pressed', String(!sortAscending));
-      const query = ticketSearch.value.trim().toLocaleLowerCase();
-      const matchingTickets = displayedTickets.filter(({ ticket, displayId }) => {
-        const searchableText = [
-          displayId,
-          ticket.id,
-          ticket.title,
-          ticket.description,
-          ticket.status,
-          ticket.riskRating,
-          ticket.product,
-          ticket.author,
-        ].filter(Boolean).join(' ').toLocaleLowerCase();
-        return searchableText.includes(query);
-      });
+      const matchingTickets = displayedTickets.filter(({ ticket }) => ticketMatchesFilters(ticket));
       if (!matchingTickets.length) {
-        ticketList.innerHTML = '<div class="empty">No tickets match your search.</div>';
+        ticketList.innerHTML = hasActiveTicketFilters()
+          ? '<div class="empty">No tickets match your filter criteria.</div>'
+          : '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
+        if (currentTicketId) {
+          currentTicketId = null;
+          renderSelectedTicket(null);
+          document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
+          notesFeed.innerHTML = '<div class="empty">Choose a ticket to view its notes and evidence.</div>';
+        }
         return;
+      }
+      if (currentTicketId && !matchingTickets.some(({ ticket }) => ticket.id === currentTicketId)) {
+        currentTicketId = null;
+        renderSelectedTicket(null);
+        document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
+        notesFeed.innerHTML = '<div class="empty">Choose a ticket to view its notes and evidence.</div>';
       }
       for (const { ticket, displayId } of matchingTickets) {
         const card = document.createElement('article');
@@ -1019,6 +1171,18 @@
         description.className = 'ticket-description';
         description.textContent = ticket.description;
         select.append(head, description);
+        const tags = getTicketTags(ticket);
+        if (tags.length) {
+          const tagList = document.createElement('span');
+          tagList.className = 'ticket-tag-list';
+          for (const tag of tags) {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'ticket-tag';
+            tagElement.textContent = `#${tag}`;
+            tagList.append(tagElement);
+          }
+          select.append(tagList);
+        }
         select.addEventListener('click', () => selectTicket(ticket.id));
         const footer = document.createElement('div');
         footer.className = 'ticket-footer';
@@ -1045,9 +1209,10 @@
       setProductOptions(products);
       tickets = loaded;
       noteCounts = counts;
+      renderTagFilters();
       if (currentTicketId && !getProductTickets().some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
       renderTickets();
-      const productTickets = getProductTickets();
+      const productTickets = getFilteredTickets();
       if (!currentTicketId && productTickets.length) await selectTicket(productTickets[productTickets.length - 1].id);
       else if (currentTicketId) renderSelectedTicket(tickets.find((ticket) => ticket.id === currentTicketId));
     }
@@ -1303,8 +1468,9 @@
         tickets = tickets.filter((ticket) => ticket.id !== ticketId);
         delete noteCounts[ticketId];
         if (currentTicketId === ticketId) currentTicketId = null;
+        renderTagFilters();
         renderTickets();
-        const productTickets = getProductTickets();
+        const productTickets = getFilteredTickets();
         if (productTickets.length) await selectTicket(productTickets[productTickets.length - 1].id);
         showToast('Ticket, notes, and associated files deleted.');
       } catch (error) { showToast(error.message, true); }
@@ -1355,19 +1521,21 @@
             title: data.get('title'),
             description: data.get('description'),
             product: data.get('product'),
+            tags: String(data.get('tags') || '').split(',').map((tag) => tag.trim()).filter(Boolean),
           }),
         });
         tickets.push(ticket);
         noteCounts[ticket.id] = 0;
+        renderTagFilters();
         if (selectedProduct !== 'all' && selectedProduct !== ticket.product) {
           selectedProduct = ticket.product;
           document.getElementById('product-filter').value = selectedProduct;
         }
-        currentTicketId = ticket.id;
+        currentTicketId = getFilteredTickets().some((candidate) => candidate.id === ticket.id) ? ticket.id : null;
         renderTickets();
         formElement.reset();
         document.getElementById('ticket-dialog').close();
-        await selectTicket(ticket.id);
+        if (currentTicketId) await selectTicket(ticket.id);
         showToast(`${ticket.id} created.`);
       } catch (error) { showToast(error.message, true); }
     });

@@ -251,6 +251,54 @@ function getTickets() {
   return result;
 }
 
+function normalizedTicketStatus(value) {
+  return String(value || '').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+}
+
+function queryValues(value) {
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .filter((entry) => typeof entry === 'string')
+    .flatMap((entry) => entry.split(','))
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function filterTickets(tickets, query) {
+  const search = queryValues(query.search).join(' ').toLocaleLowerCase();
+  const severity = queryValues(query.severity)[0]?.toLocaleLowerCase();
+  const status = queryValues(query.status)[0]?.toLocaleLowerCase();
+  const product = queryValues(query.product)[0]?.toLocaleLowerCase();
+  const tags = queryValues(query.tag).map((tag) => tag.replace(/^#/, '').toLocaleLowerCase());
+
+  return tickets.filter((ticket) => {
+    if (search) {
+      const searchableText = [ticket.title, ticket.description, ticket.author]
+        .filter((value) => typeof value === 'string')
+        .join(' ')
+        .toLocaleLowerCase();
+      if (!searchableText.includes(search)) return false;
+    }
+    if (severity && severity !== 'all') {
+      const ticketSeverity = String(ticket.severity || ticket.riskRating || '').toLocaleLowerCase();
+      if (ticketSeverity !== severity) return false;
+    }
+    if (status && status !== 'all') {
+      if (normalizedTicketStatus(ticket.status) !== normalizedTicketStatus(status)) return false;
+    }
+    if (product && product !== 'all') {
+      if (String(ticket.product || '').toLocaleLowerCase() !== product) return false;
+    }
+    if (tags.length) {
+      const ticketTags = Array.isArray(ticket.tags)
+        ? ticket.tags.map((tag) => String(tag).replace(/^#/, '').toLocaleLowerCase())
+        : [];
+      if (!tags.every((tag) => ticketTags.includes(tag))) return false;
+    }
+    return true;
+  });
+}
+
 function getNotes() {
   const result = readJson(files.notes, []);
   if (!Array.isArray(result)) throw new Error('notes.json must contain an array.');
@@ -713,7 +761,7 @@ app.post('/api/backup/import', receiveBackupUpload, (req, res, next) => {
 
 app.get('/api/tickets', (req, res, next) => {
   try {
-    return res.json(getTickets());
+    return res.json(filterTickets(getTickets(), req.query));
   } catch (error) {
     return next(error);
   }
@@ -721,7 +769,7 @@ app.get('/api/tickets', (req, res, next) => {
 
 app.post('/api/tickets', (req, res, next) => {
   try {
-    const { title, description, product = DEFAULT_PRODUCT } = req.body || {};
+    const { title, description, product = DEFAULT_PRODUCT, tags = [] } = req.body || {};
     if (typeof title !== 'string' || !title.trim() || title.length > 200) {
       return res.status(400).json({ error: 'Title of Issue is required and must be at most 200 characters.' });
     }
@@ -731,12 +779,30 @@ app.post('/api/tickets', (req, res, next) => {
     if (typeof product !== 'string' || !SUPPORTED_PRODUCTS.includes(product)) {
       return res.status(400).json({ error: 'Select a supported product category.' });
     }
+    if (!Array.isArray(tags) || tags.length > 12 || tags.some((tag) => (
+      typeof tag !== 'string'
+      || !tag.trim().replace(/^#/, '').trim()
+      || tag.trim().replace(/^#/, '').trim().length > 30
+    ))) {
+      return res.status(400).json({ error: 'Tags must be a list of at most 12 names, each at most 30 characters.' });
+    }
+    const seenTags = new Set();
+    const normalizedTags = tags.reduce((normalized, tag) => {
+      const value = tag.trim().replace(/^#/, '').trim();
+      const key = value.toLocaleLowerCase();
+      if (!seenTags.has(key)) {
+        seenTags.add(key);
+        normalized.push(value);
+      }
+      return normalized;
+    }, []);
     const tickets = getTickets();
     const ticket = {
       id: createTicketId(tickets),
       product,
       title: title.trim(),
       description: description.trim(),
+      tags: normalizedTags,
       status: 'Open',
       createdAt: new Date().toISOString(),
       author: req.user.username,
