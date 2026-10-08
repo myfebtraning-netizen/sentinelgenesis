@@ -128,6 +128,7 @@
     .ticket-card.selected { border-color: rgba(56,189,248,.62); background: linear-gradient(120deg, rgba(2,132,199,.13), rgba(7,15,33,.72)); box-shadow: inset 2px 0 0 var(--cyan); }
     .ticket-card-select-row { display: flex; align-items: start; gap: 9px; }
     .ticket-checkbox { flex: 0 0 auto; width: 15px; height: 15px; margin: 3px 0 0; accent-color: #0284c7; cursor: pointer; }
+    .ticket-card-select-row { min-height: 0; flex: 1 1 auto; }
     .ticket-card-select-row .ticket-select { min-width: 0; }
     .bulk-select-all { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
     .bulk-action-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px; border: 1px solid rgba(56,189,248,.2); border-radius: 9px; background: rgba(2,132,199,.07); }
@@ -137,7 +138,7 @@
     .bulk-delete-button { border-color: rgba(251,113,133,.3); color: #be123c; background: rgba(251,113,133,.1); }
     .bulk-delete-button:hover { background: rgba(251,113,133,.18); }
     .ticket-select { display: block; width: 100%; border: 0; padding: 0; text-align: left; background: transparent; }
-    .ticket-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+    .ticket-head { display: flex; justify-content: space-between; align-items: start; gap: 8px; flex-wrap: wrap; }
     .ticket-badges { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: end; gap: 4px; }
     .ticket-title { color: #edf5ff; font-size: 13px; font-weight: 750; overflow-wrap: anywhere; }
     .ticket-id { display: inline-block; margin-bottom: 4px; color: var(--cyan); font-family: ui-monospace, "Cascadia Code", monospace; font-size: 9px; font-weight: 800; letter-spacing: .06em; }
@@ -147,11 +148,7 @@
     .risk-high { border-color: #fed7aa; color: #c2410c; background: #fff7ed; }
     .risk-medium { border-color: #fde68a; color: #a16207; background: #fefce8; }
     .risk-low { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
-    .ticket-description { margin: 7px 0 0; color: var(--muted); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .ticket-footer { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.06); }
-    .ticket-meta { color: #7f91ac; font-size: 9px; }
-    .ticket-delete { border: 0; padding: 4px 6px; border-radius: 6px; color: #ff9aa9; background: rgba(251,113,133,.07); font-size: 10px; font-weight: 700; }
-    .ticket-delete:hover, .note-delete:hover { background: rgba(251,113,133,.16); }
+    .note-delete:hover { background: rgba(251,113,133,.16); }
     .active-ticket { color: var(--cyan) !important; font-size: 11px !important; font-weight: 700; }
     .note-form { display: grid; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
     .note-form textarea { min-height: 84px; }
@@ -251,24 +248,34 @@
     .profile-user { gap: 6px; padding: 4px 7px; color: #cbd5e1; border-color: rgba(148,163,184,.35); background: rgba(148,163,184,.08); font-size: 9px; }
     .profile-user::before { display: none; }
     .toolbar { border-bottom: 1px solid #dbe3ed; background: #ffffff; box-shadow: 0 3px 10px rgba(15,23,42,.04); }
-    .toolbar-inner { width: min(1320px, calc(100% - 64px)); min-height: 48px; margin: 0 auto; display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
-    .header-actions { display: flex; align-items: center; justify-content: end; gap: 8px; flex: 0 0 auto; }
+    .toolbar-inner { width: min(1320px, calc(100% - 64px)); min-height: 64px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 8px 0; }
+    .toolbar-actions-row { display: flex; min-width: 0; align-items: center; gap: 12px; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex: 0 1 auto; }
+    .toolbar .header-actions .button { display: inline-flex; min-width: 132px; height: 38px; min-height: 38px; justify-content: center; gap: 8px; border: 1px solid #1d4ed8; border-radius: 999px; padding: 0 14px; color: #ffffff; background: #2563eb; box-shadow: 0 2px 5px rgba(37,99,235,.18); font-size: 11px; font-weight: 750; white-space: nowrap; }
+    .toolbar .header-actions .button:hover { border-color: #1d4ed8; color: #ffffff; background: #1d4ed8; box-shadow: 0 4px 10px rgba(37,99,235,.26); }
+    .toolbar .header-actions .button:focus-visible { outline: 3px solid rgba(37,99,235,.3); outline-offset: 2px; }
+    .action-icon { font-size: 14px; line-height: 1; }
     .product-filter { width: auto; min-width: 190px; min-height: 34px; border-color: #cbd5e1; border-radius: 8px; padding: 6px 28px 6px 10px; color: #334155; background: #ffffff; font-size: 11px; }
     .toolbar .button.ghost { border-color: #cbd5e1; color: #334155; background: #ffffff; }
     .toolbar .button.ghost:hover { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
-    .toolbar-status { color: #64748b; font-size: 10px; white-space: nowrap; }
+    .toolbar-status { flex: 0 0 auto; border: 1px solid #bbf7d0; border-radius: 999px; padding: 6px 10px; color: #15803d; background: #f0fdf4; font-size: 10px; font-weight: 750; white-space: nowrap; }
     .toolbar-status::before { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #16a34a; content: ""; }
     .page { width: min(1320px, calc(100% - 64px)); max-width: none; margin: 0 auto; padding: 18px 0 55px; }
     .hero { display: none; }
     .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 25px; }
+    .toolbar .metrics { flex: 0 0 min(440px, 40%); gap: 8px; margin: 0; }
     .metric, .panel { border: 1px solid #dbe3ed; border-radius: 9px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); backdrop-filter: none; }
     .metric { min-height: 80px; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-top: 3px solid #2563eb; }
+    .toolbar .metric { min-height: 48px; gap: 5px; padding: 6px 9px; border-top-width: 2px; }
+    .toolbar .metric-label { font-size: 8px; white-space: nowrap; }
+    .toolbar .metric strong { font-size: 18px; }
+    .toolbar .metric-icon { display: none; }
     .metric:nth-child(2) { border-top-color: #dc2626; }
     .metric:nth-child(3) { border-top-color: #16a34a; }
     .metric-label { color: #64748b; font-size: 10px; text-transform: uppercase; }
     .metric strong { display: block; margin-top: 2px; color: #0f172a; font-size: 23px; letter-spacing: -.04em; }
     .metric-icon { width: 32px; height: 32px; border: 1px solid #dbeafe; border-radius: 8px; background: #eff6ff; color: #2563eb; }
-    .dashboard-grid { grid-template-columns: minmax(255px, .78fr) minmax(0, 1.6fr); gap: 16px; align-items: start; }
+    .dashboard-grid { grid-template-columns: minmax(255px, .78fr) minmax(0, 1.6fr); gap: 16px; align-items: stretch; }
     .dashboard-filter-bar { border-color: #dbe3ed; border-radius: 9px; padding: 12px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); }
     .tag-filter-disclosure { border-color: #e2e8f0; }
     .tag-filter-disclosure summary { color: #64748b; }
@@ -277,14 +284,17 @@
     .panel-heading h3 { color: #0f172a; }
     .panel-heading p { color: #64748b; }
     .panel-kicker { color: #2563eb; }
-    .ticket-list { max-height: 680px; overflow-y: auto; padding: 2px 5px 2px 2px; }
+    .ticket-list { height: 220px; max-height: 220px; grid-auto-rows: 210px; overflow-y: auto; scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-block: 2px; scrollbar-color: #94a3b8 #f1f5f9; scrollbar-width: thin; padding: 2px 5px 2px 2px; }
+    .ticket-list::-webkit-scrollbar { width: 8px; }
+    .ticket-list::-webkit-scrollbar-track { border-radius: 999px; background: #f1f5f9; }
+    .ticket-list::-webkit-scrollbar-thumb { border: 2px solid #f1f5f9; border-radius: 999px; background: #94a3b8; }
+    .ticket-list::-webkit-scrollbar-thumb:hover { background: #64748b; }
     .ticket-filter { min-height: 36px; min-width: 105px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 28px 7px 9px; color: #334155; background: #ffffff; font-size: 11px; }
     .ticket-tag-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .ticket-tag-filters[hidden], .reset-filters[hidden] { display: none; }
     .ticket-tag-label { color: #64748b; font-size: 10px; font-weight: 700; }
     .tag-chip { border: 1px solid #cbd5e1; border-radius: 999px; padding: 5px 9px; color: #475569; background: #f8fafc; font-size: 10px; font-weight: 700; }
     .tag-chip:hover, .tag-chip[aria-pressed="true"] { border-color: #60a5fa; color: #1d4ed8; background: #eff6ff; }
-    .ticket-tag-list { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
     .ticket-tag { border-radius: 999px; padding: 3px 7px; color: #1d4ed8; background: #dbeafe; font-size: 9px; font-weight: 700; }
     .reset-filters { min-height: 36px; border: 1px solid #fecaca; border-radius: 8px; padding: 7px 10px; color: #b91c1c; background: #fff7f7; font-size: 10px; font-weight: 750; }
     .reset-filters:hover { border-color: #f87171; background: #fef2f2; }
@@ -293,7 +303,12 @@
     .ticket-search::placeholder { color: #64748b; }
     .ticket-sort { min-height: 40px; border: 1px solid #cbd5e1; border-radius: 9px; padding: 8px 10px; color: #334155; background: #f8fafc; font-size: 10px; font-weight: 750; white-space: nowrap; transition: border-color .16s, color .16s, background .16s; }
     .ticket-sort:hover { border-color: #7dd3fc; color: #075985; background: #f0f9ff; }
-    .ticket-card { --ticket-accent: #34d399; border: 1px solid #e2e8f0; border-left: 3px solid var(--ticket-accent); border-radius: 9px; padding: 12px; color: #0f172a; background: #f0fdf4; box-shadow: 0 2px 7px rgba(15,23,42,.045); transition: border-color .16s, background .16s, box-shadow .16s, transform .16s; }
+    @media (max-width: 1100px) {
+      .toolbar-inner { align-items: stretch; flex-direction: column; gap: 8px; }
+      .toolbar-actions-row { justify-content: space-between; }
+      .toolbar .metrics { flex-basis: auto; width: 100%; }
+    }
+    .ticket-card { --ticket-accent: #34d399; display: flex; min-height: 0; flex-direction: column; scroll-snap-align: start; scroll-snap-stop: always; border: 1px solid #e2e8f0; border-left: 3px solid var(--ticket-accent); border-radius: 9px; padding: 10px; color: #0f172a; background: #f0fdf4; box-shadow: 0 2px 7px rgba(15,23,42,.045); transition: border-color .16s, background .16s, box-shadow .16s, transform .16s; }
     .ticket-card:nth-child(4n + 2) { --ticket-accent: #f59e0b; background: #fffbeb; }
     .ticket-card:nth-child(4n + 3) { --ticket-accent: #a78bfa; background: #f5f3ff; }
     .ticket-card:nth-child(4n + 4) { --ticket-accent: #38bdf8; background: #f0f9ff; }
@@ -301,6 +316,7 @@
     .ticket-card.selected { border-color: #2563eb; border-left-color: var(--ticket-accent); background: #eff6ff; box-shadow: inset 3px 0 0 var(--ticket-accent), 0 3px 10px rgba(37,99,235,.12); }
     .ticket-select { color: #0f172a; }
     .ticket-head { padding-bottom: 9px; border-bottom: 1px solid rgba(0, 0, 0, 0.12); }
+    .ticket-head > span { min-width: 0; flex: 1 1 120px; overflow-wrap: anywhere; }
     .ticket-title { display: block; margin-top: 4px; color: #0f172a; }
     .ticket-title { padding-top: 7px; border-top: 1px solid rgba(0, 0, 0, 0.12); }
     .ticket-id { margin: 0; color: #2563eb; font-size: 12px; font-weight: 800; letter-spacing: .035em; }
@@ -310,31 +326,32 @@
     .risk-high { border-color: #fed7aa; color: #c2410c; background: #fff7ed; }
     .risk-medium { border-color: #fde68a; color: #a16207; background: #fefce8; }
     .risk-low { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
-    .ticket-description { margin: 0; padding: 9px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); color: #475569; line-height: 1.5; }
-    .ticket-footer { margin-top: 0; padding-top: 9px; border-top: 0; }
-    .ticket-meta { color: #64748b; }
-    .ticket-delete { border: 1px solid #fecaca; color: #b91c1c; background: #fff7f7; }
-    .ticket-delete:hover, .note-delete:hover { background: #fee2e2; }
+    .note-delete:hover { background: #fee2e2; }
     .bulk-action-bar { border-color: #bfdbfe; background: #eff6ff; }
     .bulk-selection-count, .bulk-select-all { color: #475569; }
     .active-ticket { color: #2563eb !important; }
-    .workspace-right { display: grid; min-width: 0; gap: 14px; }
-    .selected-ticket { overflow: hidden; margin-bottom: 0; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; box-shadow: 0 4px 14px rgba(15,23,42,.07); }
-    .selected-ticket-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 14px; background: #0f172a; }
-    .selected-ticket h4 { margin: 3px 0 0; color: #ea580c; font-size: 18px; font-weight: 800; line-height: 1.3; }
+    .ticket-sidebar { display: grid; min-width: 0; grid-template-rows: auto 220px auto; gap: 14px; align-content: start; }
+    .ticket-sidebar > .panel-heading { align-items: center; gap: 8px; margin: 0; }
+    .ticket-sidebar > .panel-heading > div { display: flex; min-width: 0; align-items: baseline; gap: 7px; }
+    .ticket-sidebar > .panel-heading .panel-kicker { flex: 0 0 auto; font-size: 8px; }
+    .ticket-sidebar > .panel-heading h3 { font-size: 13px; white-space: nowrap; }
+    .ticket-sidebar > .panel-heading .bulk-select-all { flex: 0 0 auto; }
+    .workspace-right { display: block; min-width: 0; }
+    .workspace-right > .evidence-panel { display: flex; min-height: 100%; flex-direction: column; }
+    .workspace-right > .evidence-panel .notes-feed { min-height: 0; max-height: 680px; flex: 1 1 auto; overflow-y: auto; }
+    .selected-ticket { min-width: 0; margin-bottom: 0; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; box-shadow: 0 4px 14px rgba(15,23,42,.07); }
+    .selected-ticket-head { display: flex; min-width: 0; align-items: start; justify-content: space-between; gap: 12px; padding: 14px; background: #0f172a; }
+    .selected-ticket-head > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+    .selected-ticket-head .ticket-badges { max-width: 45%; flex-wrap: wrap; }
+    .selected-ticket h4 { margin: 3px 0 0; color: #ea580c; font-size: 18px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
     .selected-ticket-head .ticket-id { color: #7dd3fc; }
     .selected-ticket-copy { margin: 0; padding: 14px; color: #334155; background: #ffffff; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .selected-ticket-meta { display: flex; flex-wrap: wrap; gap: 7px 13px; padding: 10px 14px; border-top: 1px solid #e2e8f0; color: #475569; background: #f1f5f9; font-size: 10px; }
-    .ticket-workflow { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-top: 1px solid #e2e8f0; background: #ffffff; }
-    .workflow-field { display: grid; gap: 4px; color: #64748b; font-size: 10px; font-weight: 700; }
-    .workflow-field select { min-width: 120px; min-height: 34px; border-color: #cbd5e1; border-radius: 7px; padding: 6px 9px; color: #0f172a; background: #ffffff; font-size: 11px; }
-    .workflow-message { color: #64748b; font-size: 10px; }
-    .timeline-feed { display: grid; gap: 0; }
-    .timeline-event { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 9px; padding: 0 0 17px; }
-    .timeline-event:not(:last-child)::before { position: absolute; top: 25px; bottom: 0; left: 13px; width: 1px; background: #dbe3ed; content: ""; }
-    .timeline-badge { z-index: 1; display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #bfdbfe; border-radius: 50%; color: #1d4ed8; background: #eff6ff; font-size: 9px; font-weight: 800; }
-    .timeline-copy { min-width: 0; padding-top: 2px; color: #334155; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
-    .timeline-date { display: block; margin-top: 3px; color: #64748b; font-size: 9px; }
+    .selected-ticket-meta { display: flex; min-width: 0; flex-wrap: wrap; gap: 7px 13px; padding: 10px 14px; border-top: 1px solid #e2e8f0; color: #475569; background: #f1f5f9; font-size: 10px; overflow-wrap: anywhere; }
+    .selected-ticket-meta > span { min-width: 0; overflow-wrap: anywhere; }
+    .ticket-workflow { display: flex; min-width: 0; align-items: end; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-top: 1px solid #e2e8f0; background: #ffffff; }
+    .workflow-field { display: grid; min-width: 0; flex: 1 1 120px; gap: 4px; color: #64748b; font-size: 10px; font-weight: 700; }
+    .workflow-field select { width: 100%; min-width: 0; max-width: 100%; min-height: 34px; border-color: #cbd5e1; border-radius: 7px; padding: 6px 9px; color: #0f172a; background: #ffffff; font-size: 11px; }
+    .workflow-message { min-width: 0; color: #64748b; font-size: 10px; overflow-wrap: anywhere; }
     .note-form { gap: 10px; margin-bottom: 14px; padding: 12px; border: 1px solid #dbe3ed; border-radius: 8px; background: #f8fafc; }
     .note-form textarea { border-color: #cbd5e1; color: #0f172a; background: #ffffff; }
     .note-form textarea::placeholder { color: #94a3b8; }
@@ -383,17 +400,20 @@
       .topbar-inner { width: calc(100% - 30px); grid-template-columns: 1fr; gap: 14px; padding: 19px 0; }
       .brand { align-items: flex-start; gap: 13px; }
       .brand-logo { width: 134px; height: 86px; padding: 7px; }
-      .toolbar-inner { width: calc(100% - 30px); min-height: 52px; }
-      .header-actions { width: 100%; justify-content: stretch; }
-      .header-actions .button { flex: 1; }
-      .toolbar-status { display: none; }
+      .toolbar-inner { width: calc(100% - 30px); min-height: 0; }
+      .toolbar-actions-row { align-items: flex-start; flex-wrap: wrap; }
+      .header-actions { width: 100%; flex-wrap: wrap; }
+      .toolbar .header-actions .button { min-width: 0; flex: 1 1 calc(50% - 4px); }
+      .toolbar-status { margin-left: auto; }
       .page { width: calc(100% - 28px); padding: 17px 0 38px; }
       .dashboard-grid { grid-template-columns: 1fr; }
       .dashboard-filter-controls .ticket-search { flex-basis: 100%; }
       .dashboard-filter-controls .ticket-filter, .dashboard-filter-controls .product-filter { flex: 1 1 130px; }
       .dashboard-filter-controls .ticket-sort { flex: 1 1 100%; }
-      .ticket-list { max-height: 340px; }
+      .ticket-sidebar { grid-template-rows: auto 220px auto; }
+      .workspace-right > .evidence-panel .notes-feed { max-height: 450px; }
       .metrics { gap: 7px; margin-bottom: 16px; }
+      .toolbar .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 0; }
       .metric { min-height: 65px; padding: 10px; }
       .metric strong { font-size: 21px; }
       .metric-icon { display: none; }
@@ -411,8 +431,12 @@
       .brand-copy h1 { font-size: clamp(.9rem, 4.4vw, 1.12rem); }
       .page { width: calc(100% - 24px); }
       .metrics { grid-template-columns: 1fr; }
+      .toolbar .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .metric { display: flex; }
       .metric strong { margin-left: auto; }
+      .toolbar .metric { display: block; min-width: 0; padding: 6px; }
+      .toolbar .metric strong { margin-left: 0; font-size: 17px; }
+      .toolbar .metric-label { font-size: 7px; }
     }
     @media (max-width: 800px) {
       .topbar-inner { grid-template-columns: 1fr; gap: 16px; }
@@ -498,14 +522,21 @@
     </header>
     <nav class="toolbar" aria-label="Workspace actions">
       <div class="toolbar-inner">
-        <div class="header-actions">
-          <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
-          <button class="button primary small" id="executive-report-button" type="button">Export Report</button>
-          <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
-          <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
-          <input type="file" id="importFileInput" accept=".zip" hidden>
-          <span class="toolbar-status" id="sync-state" aria-live="polite">Connected</span>
+        <div class="toolbar-actions-row">
+          <div class="header-actions">
+            <button class="button primary" id="new-ticket-button" type="button"><span class="action-icon" aria-hidden="true">＋</span><span>New Ticket</span></button>
+            <button class="button primary" id="executive-report-button" type="button"><span class="action-icon" aria-hidden="true">▤</span><span>Export Report</span></button>
+            <button class="button primary" id="export-backup-button" type="button"><span class="action-icon" aria-hidden="true">↓</span><span>Export All Tickets</span></button>
+            <button class="button primary" id="import-backup-button" type="button"><span class="action-icon" aria-hidden="true">↑</span><span>Import All Tickets</span></button>
+            <input type="file" id="importFileInput" accept=".zip" hidden>
+          </div>
+          <span class="toolbar-status" id="sync-state" aria-live="polite">Synced</span>
         </div>
+        <section class="metrics" aria-label="Audit metrics">
+          <article class="metric"><div><span class="metric-label">Total concerns</span><strong id="total-count">0</strong></div><span class="metric-icon">▤</span></article>
+          <article class="metric"><div><span class="metric-label">Open concerns</span><strong id="open-count">0</strong></div><span class="metric-icon">⌁</span></article>
+          <article class="metric"><div><span class="metric-label">Audit notes</span><strong id="note-count">0</strong></div><span class="metric-icon">◷</span></article>
+        </section>
       </div>
     </nav>
     <main class="page">
@@ -515,11 +546,6 @@
           <h2>Audit workspace overview</h2>
           <p>Track technical concerns, findings, remediation notes, and evidence.</p>
         </div>
-      </section>
-      <section class="metrics" aria-label="Audit metrics">
-        <article class="metric"><div><span class="metric-label">Total concerns</span><strong id="total-count">0</strong></div><span class="metric-icon">▤</span></article>
-        <article class="metric"><div><span class="metric-label">Open concerns</span><strong id="open-count">0</strong></div><span class="metric-icon">⌁</span></article>
-        <article class="metric"><div><span class="metric-label">Audit notes</span><strong id="note-count">0</strong></div><span class="metric-icon">◷</span></article>
       </section>
       <section class="dashboard-filter-bar" aria-label="Dashboard filters">
         <div class="dashboard-filter-controls">
@@ -571,12 +597,10 @@
       <div class="dashboard-grid">
         <aside class="panel ticket-sidebar">
           <div class="panel-heading">
-            <div><span class="panel-kicker">Issue register</span><h3>Tracked Tickets</h3><p>Select an item to open its details and evidence.</p></div>
+            <div><span class="panel-kicker">Issue register /</span><h3>Tracked Tickets</h3></div>
             <label class="bulk-select-all"><input class="ticket-checkbox" id="select-all-tickets" type="checkbox" aria-label="Select all visible tickets"> Select All</label>
           </div>
           <div class="ticket-list" id="ticket-list"><div class="empty">Loading concerns…</div></div>
-        </aside>
-        <div class="workspace-right">
           <section class="selected-ticket" id="selected-ticket-details" aria-label="Selected ticket details" hidden>
             <div class="selected-ticket-head">
               <div><span class="ticket-id" id="selected-ticket-id"></span><h4 id="selected-ticket-title"></h4></div>
@@ -609,7 +633,9 @@
               <span class="workflow-message" id="workflow-message" role="status" aria-live="polite"></span>
             </form>
           </section>
-          <section class="panel">
+        </aside>
+        <div class="workspace-right">
+          <section class="panel evidence-panel">
             <div class="panel-heading">
               <div><span class="panel-kicker">Evidence &amp; observations</span><h3>Audit Notes &amp; Evidence Log</h3><p class="active-ticket" id="active-ticket-label">Select a ticket to view its audit notes.</p></div>
             </div>
@@ -627,12 +653,6 @@
               <audio class="audio-preview" id="audio-preview" controls hidden></audio>
             </form>
             <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
-          </section>
-          <section class="panel" aria-labelledby="activity-timeline-title">
-            <div class="panel-heading">
-              <div><span class="panel-kicker">Ticket history</span><h3 id="activity-timeline-title">Audit Trail &amp; Activity Timeline</h3><p>Chronological record of workflow and ticket classification changes.</p></div>
-            </div>
-            <div class="timeline-feed" id="activity-timeline" aria-live="polite"><div class="empty">Choose a ticket to view its activity.</div></div>
           </section>
         </div>
       </div>
@@ -1640,36 +1660,10 @@
           badges.append(risk);
         }
         head.append(titleGroup, badges);
-        const description = document.createElement('p');
-        description.className = 'ticket-description';
-        description.textContent = ticket.description;
-        select.append(head, description);
-        const tags = getTicketTags(ticket);
-        if (tags.length) {
-          const tagList = document.createElement('span');
-          tagList.className = 'ticket-tag-list';
-          for (const tag of tags) {
-            const tagElement = document.createElement('span');
-            tagElement.className = 'ticket-tag';
-            tagElement.textContent = `#${tag}`;
-            tagList.append(tagElement);
-          }
-          select.append(tagList);
-        }
+        select.append(head);
         select.addEventListener('click', () => selectTicket(ticket.id));
-        const footer = document.createElement('div');
-        footer.className = 'ticket-footer';
-        const meta = document.createElement('span');
-        meta.className = 'ticket-meta';
-        meta.textContent = `${ticket.product} · ${ticket.author || 'Unknown author'} · ${new Date(ticket.createdAt).toLocaleDateString()}`;
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'ticket-delete';
-        remove.textContent = 'Delete Ticket';
-        remove.addEventListener('click', () => deleteTicket(ticket.id));
-        footer.append(meta, remove);
         cardSelectRow.append(checkbox, select);
-        card.append(cardSelectRow, footer);
+        card.append(cardSelectRow);
         ticketList.append(card);
       }
     }
@@ -1701,7 +1695,6 @@
       const details = document.getElementById('selected-ticket-details');
       if (!ticket) {
         details.hidden = true;
-        renderAuditTimeline(null);
         return;
       }
       details.hidden = false;
@@ -1721,56 +1714,6 @@
       document.getElementById('workflow-severity').value = severity.toUpperCase();
       document.getElementById('workflow-product').value = ticket.product;
       document.getElementById('workflow-message').textContent = '';
-      renderAuditTimeline(ticket);
-    }
-
-    function renderAuditTimeline(ticket) {
-      const timeline = document.getElementById('activity-timeline');
-      timeline.replaceChildren();
-      const events = Array.isArray(ticket?.activityLog) ? [...ticket.activityLog] : [];
-      if (!events.length) {
-        const empty = document.createElement('div');
-        empty.className = 'empty';
-        empty.textContent = ticket ? 'No workflow activity has been recorded.' : 'Choose a ticket to view its activity.';
-        timeline.append(empty);
-        return;
-      }
-
-      events.sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
-      for (const event of events) {
-        const eventRow = document.createElement('article');
-        eventRow.className = 'timeline-event';
-        const badge = document.createElement('span');
-        badge.className = 'timeline-badge';
-        const copy = document.createElement('div');
-        copy.className = 'timeline-copy';
-        const description = document.createElement('div');
-        const date = document.createElement('time');
-        date.className = 'timeline-date';
-        date.dateTime = event.timestamp;
-        date.textContent = new Date(event.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-        let field;
-        if (event.action === 'status_changed' || event.action === 'bulk_status_changed') {
-          field = 'Status';
-          badge.textContent = 'S';
-        } else if (event.action === 'severity_changed' || event.action === 'bulk_severity_changed') {
-          field = 'Severity';
-          badge.textContent = 'V';
-        } else {
-          field = 'Product category';
-          badge.textContent = 'P';
-        }
-        const transition = event.statusTo === null
-          ? `cleared (was ${event.statusFrom})`
-          : event.statusFrom
-            ? `changed from ${event.statusFrom} to ${event.statusTo}`
-            : `set to ${event.statusTo}`;
-        const bulkLabel = event.action.startsWith('bulk_') ? ' via bulk action' : '';
-        description.textContent = `${field} ${transition} by ${event.performedBy || 'Unknown user'}${bulkLabel}`;
-        copy.append(description, date);
-        eventRow.append(badge, copy);
-        timeline.append(eventRow);
-      }
     }
 
     async function selectTicket(ticketId) {
