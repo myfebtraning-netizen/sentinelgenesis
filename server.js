@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -15,7 +16,7 @@ const PUBLIC_UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const PUBLIC_IMAGE_DIR = path.join(PUBLIC_DIR, 'images');
 const STORAGE_DIR = process.env.STORAGE_DIR ? path.resolve(process.env.STORAGE_DIR) : DATA_DIR;
 const UPLOAD_DIR = process.env.STORAGE_DIR ? path.join(STORAGE_DIR, 'uploads') : PUBLIC_UPLOAD_DIR;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sentinel';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI;
 const MASTER_PASSWORD = 'cat123123';
 const DEFAULT_USERNAME = 'Admin';
 const DEFAULT_PASSWORD = 'admin@123#';
@@ -331,7 +332,11 @@ async function getTickets() {
 }
 
 async function initializeMongo() {
+  if (!MONGODB_URI) {
+    throw new Error('Set MONGODB_URI or MONGODB_ATLAS_URI to your MongoDB Atlas connection string.');
+  }
   await mongoose.connect(MONGODB_URI);
+  console.log('Connected to MongoDB Atlas successfully');
   try {
     await Ticket.createCollection();
   } catch (error) {
@@ -1079,6 +1084,120 @@ async function updateTicket(req, res, next) {
 app.patch('/api/tickets/:id', updateTicket);
 app.put('/api/tickets/:id', updateTicket);
 
+function getBulkTicketIds(value) {
+  if (!Array.isArray(value) || !value.length || value.length > 500
+    || value.some((id) => typeof id !== 'string' || !id.trim())) {
+    const error = new Error('Provide between 1 and 500 valid ticket IDs.');
+    error.status = 400;
+    throw error;
+  }
+  return [...new Set(value.map((id) => id.trim()))];
+}
+
+app.post('/api/tickets/bulk-update', async (req, res, next) => {
+  try {
+    const { ids, status, severity } = req.body || {};
+    const hasStatus = Object.hasOwn(req.body || {}, 'status');
+    const hasSeverity = Object.hasOwn(req.body || {}, 'severity');
+    if (hasStatus === hasSeverity || Object.keys(req.body || {}).some((key) => !['ids', 'status', 'severity'].includes(key))) {
+      return res.status(400).json({ error: 'Provide ticket IDs and exactly one of status or severity.' });
+    }
+    const ticketIds = getBulkTicketIds(ids);
+    const nextValue = hasStatus ? canonicalTicketStatus(status) : canonicalTicketSeverity(severity);
+    if (!nextValue) {
+      const field = hasStatus ? 'Status' : 'Severity';
+      const values = hasStatus ? TICKET_STATUSES : TICKET_SEVERITIES;
+      return res.status(400).json({ error: `${field} must be one of: ${values.join(', ')}.` });
+    }
+
+    const documents = await Ticket.find({ _id: { $in: ticketIds } }).lean();
+    if (documents.length !== ticketIds.length) {
+      return res.status(404).json({ error: 'One or more selected tickets were not found.' });
+    }
+    const timestamp = new Date();
+    const action = hasStatus ? 'bulk_status_changed' : 'bulk_severity_changed';
+    const operations = documents.flatMap((document) => {
+      const currentValue = hasStatus
+        ? (document.status || 'Open')
+        : (document.severity || document.riskRating || null);
+      const changed = hasStatus
+        ? normalizedTicketStatus(currentValue) !== normalizedTicketStatus(nextValue)
+        : currentValue !== nextValue;
+      if (!changed) return [];
+
+      const set = hasStatus
+        ? { status: nextValue }
+        : { severity: nextValue, riskRating: nextValue };
+      return [{
+        updateOne: {
+          filter: { _id: document._id },
+          update: {
+            $set: set,
+            $push: {
+              activityLog: {
+                action,
+                statusFrom: currentValue,
+                statusTo: nextValue,
+                performedBy: req.user.username,
+                timestamp,
+              },
+            },
+          },
+        },
+      }];
+    });
+    if (operations.length) await Ticket.bulkWrite(operations);
+    const updatedDocuments = await Ticket.find({ _id: { $in: ticketIds } }).lean();
+    return res.json({
+      updatedCount: operations.length,
+      tickets: updatedDocuments.map(toApiTicket),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/tickets/bulk-delete', async (req, res, next) => {
+  if (!masterPasswordMatches(masterPasswordFromRequest(req))) {
+    return res.status(403).json({ error: 'Incorrect Master Password. Access Denied.' });
+  }
+  try {
+    const ticketIds = getBulkTicketIds(req.body?.ids);
+    const documents = await Ticket.find({ _id: { $in: ticketIds } }).lean();
+    if (documents.length !== ticketIds.length) {
+      return res.status(404).json({ error: 'One or more selected tickets were not found.' });
+    }
+
+    const notes = getNotes();
+    const deletedNotes = notes.filter((note) => ticketIds.includes(note.ticketId));
+    const nextNotes = notes.filter((note) => !ticketIds.includes(note.ticketId));
+    const session = await mongoose.startSession();
+    let notesReplaced = false;
+    try {
+      await session.withTransaction(async () => {
+        await Ticket.deleteMany({ _id: { $in: ticketIds } }, { session });
+        atomicWriteJson(files.notes, nextNotes);
+        notesReplaced = true;
+      });
+    } catch (error) {
+      if (notesReplaced) {
+        try {
+          atomicWriteJson(files.notes, notes);
+        } catch (rollbackError) {
+          console.error(`Unable to restore notes after failed MongoDB bulk ticket deletion: ${rollbackError.message}`);
+        }
+      }
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+    removeAttachmentFiles(deletedNotes);
+    return res.json({ deletedCount: documents.length });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.delete('/api/tickets/:id', async (req, res, next) => {
   if (!masterPasswordMatches(masterPasswordFromRequest(req))) {
     return res.status(403).json({ error: 'Incorrect Master Password. Access Denied.' });
@@ -1284,7 +1403,7 @@ function startServer() {
     console.log(`SiyanoAV audit dashboard listening on 0.0.0.0:${PORT}`);
   });
   initializeMongo().catch((error) => {
-    console.error(`Unable to connect to MongoDB at startup: ${error.message}`);
+    console.error(`Unable to connect to MongoDB Atlas at startup: ${error.message}`);
   });
 }
 
