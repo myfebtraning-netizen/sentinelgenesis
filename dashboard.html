@@ -107,6 +107,15 @@
     .metric strong { color: #f4f9ff; font-size: 26px; letter-spacing: -.05em; }
     .metric-icon { display: grid; place-items: center; width: 35px; height: 35px; border: 1px solid rgba(56,189,248,.16); border-radius: 10px; background: rgba(2,132,199,.1); color: var(--cyan); font-size: 15px; }
     .dashboard-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.55fr); gap: 15px; align-items: start; }
+    .dashboard-filter-bar { display: grid; gap: 10px; margin: 0 0 15px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: linear-gradient(145deg, rgba(18,32,58,.83), rgba(13,23,45,.82)); box-shadow: var(--shadow); }
+    .dashboard-filter-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .dashboard-filter-controls .ticket-search { flex: 2 1 260px; }
+    .dashboard-filter-controls .ticket-filter { flex: 1 1 130px; }
+    .dashboard-filter-controls .product-filter { flex: 1 1 170px; }
+    .dashboard-filter-controls .ticket-sort { flex: 0 0 auto; }
+    .tag-filter-disclosure { border-top: 1px solid var(--line); padding-top: 8px; }
+    .tag-filter-disclosure summary { width: fit-content; color: var(--muted); font-size: 10px; font-weight: 700; cursor: pointer; }
+    .tag-filter-disclosure .ticket-tag-filters { margin-top: 8px; }
     .panel { min-width: 0; padding: 17px; transition: border-color .18s, transform .18s; }
     .panel:hover { border-color: rgba(56,189,248,.2); }
     .panel-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 14px; }
@@ -260,18 +269,16 @@
     .metric strong { display: block; margin-top: 2px; color: #0f172a; font-size: 23px; letter-spacing: -.04em; }
     .metric-icon { width: 32px; height: 32px; border: 1px solid #dbeafe; border-radius: 8px; background: #eff6ff; color: #2563eb; }
     .dashboard-grid { grid-template-columns: minmax(255px, .78fr) minmax(0, 1.6fr); gap: 16px; align-items: start; }
+    .dashboard-filter-bar { border-color: #dbe3ed; border-radius: 9px; padding: 12px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); }
+    .tag-filter-disclosure { border-color: #e2e8f0; }
+    .tag-filter-disclosure summary { color: #64748b; }
     .panel { min-width: 0; padding: 17px; transition: border-color .18s, box-shadow .18s; }
     .panel:hover { border-color: #c5d4e6; box-shadow: 0 6px 20px rgba(15,23,42,.07); }
     .panel-heading h3 { color: #0f172a; }
     .panel-heading p { color: #64748b; }
     .panel-kicker { color: #2563eb; }
     .ticket-list { max-height: 680px; overflow-y: auto; padding: 2px 5px 2px 2px; }
-    .ticket-controls { display: grid; gap: 8px; margin-bottom: 14px; }
-    .ticket-search-row, .ticket-filter-row { display: flex; align-items: center; gap: 8px; }
-    .ticket-search-row .ticket-search { flex: 1 1 auto; }
-    .ticket-filter-row { flex-wrap: wrap; }
     .ticket-filter { min-height: 36px; min-width: 105px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 28px 7px 9px; color: #334155; background: #ffffff; font-size: 11px; }
-    .ticket-filter.product-filter { flex: 1 1 175px; }
     .ticket-tag-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .ticket-tag-filters[hidden], .reset-filters[hidden] { display: none; }
     .ticket-tag-label { color: #64748b; font-size: 10px; font-weight: 700; }
@@ -382,6 +389,9 @@
       .toolbar-status { display: none; }
       .page { width: calc(100% - 28px); padding: 17px 0 38px; }
       .dashboard-grid { grid-template-columns: 1fr; }
+      .dashboard-filter-controls .ticket-search { flex-basis: 100%; }
+      .dashboard-filter-controls .ticket-filter, .dashboard-filter-controls .product-filter { flex: 1 1 130px; }
+      .dashboard-filter-controls .ticket-sort { flex: 1 1 100%; }
       .ticket-list { max-height: 340px; }
       .metrics { gap: 7px; margin-bottom: 16px; }
       .metric { min-height: 65px; padding: 10px; }
@@ -511,54 +521,55 @@
         <article class="metric"><div><span class="metric-label">Open concerns</span><strong id="open-count">0</strong></div><span class="metric-icon">⌁</span></article>
         <article class="metric"><div><span class="metric-label">Audit notes</span><strong id="note-count">0</strong></div><span class="metric-icon">◷</span></article>
       </section>
+      <section class="dashboard-filter-bar" aria-label="Dashboard filters">
+        <div class="dashboard-filter-controls">
+          <input class="ticket-search" id="ticket-search" type="search" placeholder="Search title, description, or author..." aria-label="Search ticket titles, descriptions, or authors" aria-controls="ticket-list">
+          <label class="sr-only" for="severity-filter">Filter by severity</label>
+          <select class="ticket-filter" id="severity-filter" aria-label="Filter by severity">
+            <option value="all">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <label class="sr-only" for="status-filter">Filter by status</label>
+          <select class="ticket-filter" id="status-filter" aria-label="Filter by status">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <label class="sr-only" for="product-filter">Select Product</label>
+          <select class="ticket-filter product-filter" id="product-filter" aria-label="Select Product">
+            <option value="all">All Products</option>
+          </select>
+          <button class="ticket-sort" id="ticket-sort" type="button" aria-controls="ticket-list" aria-label="Sort ticket order ascending">⇅ Sort: Ticket01 → 10</button>
+          <button class="reset-filters" id="reset-ticket-filters" type="button" hidden>Reset Filters</button>
+        </div>
+        <details class="tag-filter-disclosure">
+          <summary>Filter by tags</summary>
+          <div class="ticket-tag-filters" id="ticket-tag-filters" aria-label="Filter by tags" hidden></div>
+        </details>
+        <div class="bulk-action-bar" id="bulk-action-bar" aria-label="Bulk ticket actions" hidden>
+          <span class="bulk-selection-count" id="bulk-selection-count" aria-live="polite">0 selected</span>
+          <label class="sr-only" for="bulk-status">Bulk status update</label>
+          <select class="ticket-filter" id="bulk-status" aria-label="Bulk status update">
+            <option value="">Set status…</option>
+            <option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option>
+          </select>
+          <button class="button primary small" id="apply-bulk-status" type="button">Apply</button>
+          <label class="sr-only" for="bulk-severity">Bulk severity update</label>
+          <select class="ticket-filter" id="bulk-severity" aria-label="Bulk severity update">
+            <option value="">Set severity…</option>
+            <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option>
+          </select>
+          <button class="button primary small" id="apply-bulk-severity" type="button">Apply</button>
+          <button class="button danger small bulk-delete-button" id="delete-selected-tickets" type="button">Delete Selected</button>
+        </div>
+      </section>
       <div class="dashboard-grid">
         <aside class="panel ticket-sidebar">
-          <div class="ticket-controls">
-            <div class="ticket-search-row">
-              <input class="ticket-search" id="ticket-search" type="search" placeholder="Search title, description, or author..." aria-label="Search ticket titles, descriptions, or authors" aria-controls="ticket-list">
-              <button class="ticket-sort" id="ticket-sort" type="button" aria-controls="ticket-list" aria-label="Sort ticket order ascending">⇅ Sort: Ticket01 → 10</button>
-            </div>
-            <div class="ticket-filter-row" aria-label="Ticket filters">
-              <label class="sr-only" for="severity-filter">Filter by severity</label>
-              <select class="ticket-filter" id="severity-filter" aria-label="Filter by severity">
-                <option value="all">All Severities</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <label class="sr-only" for="status-filter">Filter by status</label>
-              <select class="ticket-filter" id="status-filter" aria-label="Filter by status">
-                <option value="all">All Statuses</option>
-                <option value="open">Open</option>
-                <option value="in progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
-              <label class="sr-only" for="product-filter">Select Product</label>
-              <select class="ticket-filter product-filter" id="product-filter" aria-label="Select Product">
-                <option value="all">All Products</option>
-              </select>
-              <button class="reset-filters" id="reset-ticket-filters" type="button" hidden>Reset Filters</button>
-            </div>
-            <div class="ticket-tag-filters" id="ticket-tag-filters" aria-label="Filter by tags" hidden></div>
-            <div class="bulk-action-bar" id="bulk-action-bar" aria-label="Bulk ticket actions" hidden>
-              <span class="bulk-selection-count" id="bulk-selection-count" aria-live="polite">0 selected</span>
-              <label class="sr-only" for="bulk-status">Bulk status update</label>
-              <select class="ticket-filter" id="bulk-status" aria-label="Bulk status update">
-                <option value="">Set status…</option>
-                <option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option>
-              </select>
-              <button class="button primary small" id="apply-bulk-status" type="button">Apply</button>
-              <label class="sr-only" for="bulk-severity">Bulk severity update</label>
-              <select class="ticket-filter" id="bulk-severity" aria-label="Bulk severity update">
-                <option value="">Set severity…</option>
-                <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option>
-              </select>
-              <button class="button primary small" id="apply-bulk-severity" type="button">Apply</button>
-              <button class="button danger small bulk-delete-button" id="delete-selected-tickets" type="button">Delete Selected</button>
-            </div>
-          </div>
           <div class="panel-heading">
             <div><span class="panel-kicker">Issue register</span><h3>Tracked Tickets</h3><p>Select an item to open its details and evidence.</p></div>
             <label class="bulk-select-all"><input class="ticket-checkbox" id="select-all-tickets" type="checkbox" aria-label="Select all visible tickets"> Select All</label>
@@ -1327,6 +1338,7 @@
         if (!availableTags.has(selectedTag)) selectedTags.delete(selectedTag);
       }
       container.hidden = !tags.length;
+      container.parentElement.hidden = !tags.length;
       if (!tags.length) return;
 
       const label = document.createElement('span');
