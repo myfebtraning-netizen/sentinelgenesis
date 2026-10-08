@@ -18,15 +18,6 @@
     "author": "Admin"
   },
   {
-    "id": "458a2f79-41c3-4d1a-81d9-b6cbfbb48f03",
-    "ticketId": "Ticket03",
-    "text": "Root-Cause Hypothesis: UI state may not reconcile with Windows Filtering Platform (WFP) policy, or the product rule may be scoped to the wrong app identity, profile, or network layer. Example Scenario to Validate: With a dedicated test rule, launch Brave on each Windows network profile, inspect the effective WFP filters and product rule log, then compare displayed status with OS firewall state. Expected vs. Reported Behavior: Expected: a saved application rule is installed at the intended WFP authorization layer and enforcement/status are observable. Reported: Brave remained reachable, automatic rules were missing, and status disagreed with Windows.",
-    "attachments": [],
-    "createdAt": "2026-10-08T07:39:00.000Z",
-    "updatedAt": "2026-10-08T07:39:00.000Z",
-    "author": "Admin"
-  },
-  {
     "id": "d5b30e92-8e7c-4a0a-9a36-82ef1f370404",
     "ticketId": "Ticket04",
     "text": "Root-Cause Hypothesis: Category taxonomy, wildcard/apex matching, allow/deny precedence, or policy cache refresh may be inconsistent across browser, DNS, and encrypted traffic paths. Example Scenario to Validate: In a controlled test profile, classify a documented chat-domain test set, add one domain to the allowlist, apply the policy without reboot, and test apex plus subdomain variants over HTTPS. Expected vs. Reported Behavior: Expected: the chat category and explicit allowlist produce deterministic, documented precedence across supported traffic paths. Reported: WhatsApp categorization/allowlisting failed and a restricted chat site remained accessible.",
@@ -51,6 +42,22 @@
     "attachments": [],
     "createdAt": "2026-10-08T07:42:00.000Z",
     "updatedAt": "2026-10-08T07:42:00.000Z",
+    "author": "Admin"
+  },
+  {
+    "id": "6708f821-c813-400c-94ee-963c57becfc0",
+    "ticketId": "Ticket03",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "230f2f27-3fb4-4038-aaad-c190ba840c28.pdf",
+        "name": "SPECIMEN.pdf",
+        "mimeType": "application/pdf",
+        "size": 357509
+      }
+    ],
+    "createdAt": "2026-10-08T08:42:46.224Z",
+    "updatedAt": "2026-10-08T08:42:46.224Z",
     "author": "Admin"
   }
 ]

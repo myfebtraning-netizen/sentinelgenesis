@@ -24,7 +24,7 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(ellipse at 50% -20%, rgba(2,132,199,.2), transparent 42%), linear-gradient(145deg, #0a1128, #0b142a 62%, #0a1128); font: 14px/1.55 Inter, "Segoe UI", Roboto, Arial, sans-serif; }
-    button, input, textarea { font: inherit; }
+    button, input, textarea, select { font: inherit; }
     button { color: inherit; cursor: pointer; }
     [hidden] { display: none !important; }
     .auth-screen { position: fixed; inset: 0; z-index: 20; display: grid; align-items: safe center; justify-items: center; overflow-y: auto; padding: 24px; background: radial-gradient(ellipse at center, #081026 0%, #050a18 68%, #030712 100%); }
@@ -44,7 +44,9 @@
     .form-stack { display: grid; gap: 12px; }
     .field { display: grid; gap: 6px; }
     .field label, .field > span { color: #cbd8eb; font-size: 12px; font-weight: 650; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
     input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; outline: none; padding: 11px 12px; color: var(--text); background: rgba(5,12,28,.64); transition: border-color .16s, box-shadow .16s; }
+    select { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 10px; outline: none; padding: 9px 12px; color: var(--text); background: #0f172a; }
     .auth-content input { min-height: 43px; border-color: #bae6fd; color: #0f172a; background: #e0f2fe; }
     .auth-content input::placeholder { color: #64748b; }
     .auth-content input:focus { border-color: #38bdf8; background: #f0f9ff; box-shadow: 0 0 0 3px rgba(56,189,248,.2); }
@@ -232,6 +234,7 @@
     .toolbar { border-bottom: 1px solid #dbe3ed; background: #ffffff; box-shadow: 0 3px 10px rgba(15,23,42,.04); }
     .toolbar-inner { width: min(1320px, calc(100% - 64px)); min-height: 48px; margin: 0 auto; display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
     .header-actions { display: flex; align-items: center; justify-content: end; gap: 8px; flex: 0 0 auto; }
+    .product-filter { width: auto; min-width: 190px; min-height: 34px; border-color: #cbd5e1; border-radius: 8px; padding: 6px 28px 6px 10px; color: #334155; background: #ffffff; font-size: 11px; }
     .toolbar .button.ghost { border-color: #cbd5e1; color: #334155; background: #ffffff; }
     .toolbar .button.ghost:hover { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
     .toolbar-status { color: #64748b; font-size: 10px; white-space: nowrap; }
@@ -454,6 +457,10 @@
           <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
           <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
           <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
+          <label class="sr-only" for="product-filter">Select Product</label>
+          <select class="product-filter" id="product-filter" aria-label="Select Product">
+            <option value="all">All Products</option>
+          </select>
           <input type="file" id="importFileInput" accept=".zip" hidden>
           <span class="toolbar-status" id="sync-state" aria-live="polite">Connected</span>
         </div>
@@ -494,6 +501,7 @@
             </div>
             <p class="selected-ticket-copy" id="selected-ticket-description"></p>
             <div class="selected-ticket-meta">
+              <span id="selected-ticket-product"></span>
               <span id="selected-ticket-author"></span>
               <span id="selected-ticket-date"></span>
             </div>
@@ -554,6 +562,7 @@
     <div class="dialog-inner">
       <div class="dialog-head"><div><h3>Create a technical concern</h3><p>New tickets are assigned an ID, timestamp, author, and Open status.</p></div><button class="close" type="button" data-close="ticket-dialog" aria-label="Close dialog">×</button></div>
       <form class="ticket-form" id="ticket-form">
+        <div class="field"><label for="ticket-product">Product Category</label><select id="ticket-product" name="product" required></select></div>
         <div class="field"><label for="ticket-title">Title of Issue</label><input id="ticket-title" name="title" maxlength="200" required placeholder="Summarize the technical concern"></div>
         <div class="field"><label for="ticket-description">Description</label><textarea id="ticket-description" name="description" maxlength="10000" required placeholder="Describe the observed behavior, impact, and context…"></textarea></div>
         <button class="button primary" type="submit">Create ticket</button>
@@ -605,6 +614,9 @@
     let recordedAudioUrl = null;
     let noteRenderVersion = 0;
     let noteSnapshot = null;
+    let supportedProducts = [];
+    let selectedProduct = 'all';
+    let noteCounts = {};
     let attachmentObjectUrls = [];
     let previewObjectUrl = null;
     let resolveDeletionPrompt = null;
@@ -664,6 +676,24 @@
         throw new Error(`Could not load attachment (${response.status}).`);
       }
       return response.blob();
+    }
+
+    function setProductOptions(products) {
+      supportedProducts = products;
+      const filter = document.getElementById('product-filter');
+      const filterValue = selectedProduct;
+      filter.replaceChildren(new Option('All Products', 'all'));
+      const category = document.getElementById('ticket-product');
+      category.replaceChildren();
+      for (const product of supportedProducts) {
+        filter.add(new Option(product, product));
+        category.add(new Option(product, product));
+      }
+      selectedProduct = supportedProducts.includes(filterValue) ? filterValue : 'all';
+      filter.value = selectedProduct;
+      if (category.options.length) {
+        category.value = selectedProduct !== 'all' ? selectedProduct : supportedProducts[0];
+      }
     }
 
     async function exportBackup() {
@@ -772,7 +802,8 @@
       if (pollTimer) clearInterval(pollTimer);
       loadTickets().catch((error) => showToast(error.message, true));
       pollTimer = setInterval(() => {
-        loadAuditNotesFromApi().catch((error) => showToast(error.message, true));
+        Promise.all([loadAuditNotesFromApi(), loadNoteCountsFromApi()])
+          .catch((error) => showToast(error.message, true));
       }, 5000);
     }
 
@@ -861,23 +892,52 @@
       return currentTicketId === id;
     }
 
+    function getProductTickets() {
+      return tickets.filter((ticket) => selectedProduct === 'all' || ticket.product === selectedProduct);
+    }
+
+    function updateMetrics(productTickets = getProductTickets()) {
+      document.getElementById('total-count').textContent = productTickets.length;
+      document.getElementById('open-count').textContent = productTickets.filter((ticket) => ticket.status === 'Open').length;
+      document.getElementById('note-count').textContent = productTickets.reduce(
+        (total, ticket) => total + (noteCounts[ticket.id] || 0),
+        0,
+      );
+    }
+
     ticketSearch.addEventListener('input', renderTickets);
     ticketSort.addEventListener('click', () => {
       sortAscending = !sortAscending;
       renderTickets();
     });
+    document.getElementById('product-filter').addEventListener('change', async (event) => {
+      selectedProduct = event.currentTarget.value;
+      const productTickets = getProductTickets();
+      if (currentTicketId && !productTickets.some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
+      renderTickets();
+      if (productTickets.length && !currentTicketId) await selectTicket(productTickets[0].id);
+      else if (!productTickets.length) {
+        noteSnapshot = null;
+        renderSelectedTicket(null);
+        document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
+        notesFeed.innerHTML = '<div class="empty">No tickets are available for this product.</div>';
+      }
+    });
 
     function renderTickets() {
-      document.getElementById('total-count').textContent = tickets.length;
-      document.getElementById('open-count').textContent = tickets.filter((ticket) => ticket.status === 'Open').length;
+      const productTickets = getProductTickets();
+      updateMetrics(productTickets);
       ticketList.replaceChildren();
-      if (!tickets.length) {
-        ticketList.innerHTML = '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
-        document.getElementById('note-count').textContent = '0';
-        notesFeed.innerHTML = '<div class="empty">Create a ticket to start its evidence log.</div>';
+      if (!productTickets.length) {
+        ticketList.innerHTML = tickets.length
+          ? '<div class="empty">No tickets are available for this product.</div>'
+          : '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
         currentTicketId = null;
-        document.getElementById('selected-ticket-details').hidden = true;
+        renderSelectedTicket(null);
         document.getElementById('active-ticket-label').textContent = 'Select a ticket to view its audit notes.';
+        notesFeed.innerHTML = tickets.length
+          ? '<div class="empty">No tickets are available for this product.</div>'
+          : '<div class="empty">Create a ticket to start its evidence log.</div>';
         return;
       }
       const ticketNumber = (ticket) => {
@@ -887,7 +947,7 @@
       const compareTickets = (first, second) => {
         const firstNumber = ticketNumber(first);
         const secondNumber = ticketNumber(second);
-        if (tickets.every((ticket) => ticketNumber(ticket) !== null)) return firstNumber - secondNumber;
+        if (productTickets.every((ticket) => ticketNumber(ticket) !== null)) return firstNumber - secondNumber;
         const firstDate = Date.parse(first.createdAt);
         const secondDate = Date.parse(second.createdAt);
         if (Number.isFinite(firstDate) && Number.isFinite(secondDate) && firstDate !== secondDate) {
@@ -895,7 +955,7 @@
         }
         return (first.displayId || first.id || '').localeCompare(second.displayId || second.id || '', undefined, { numeric: true });
       };
-      const ascendingTickets = [...tickets].sort(compareTickets);
+      const ascendingTickets = [...productTickets].sort(compareTickets);
       const displayedTickets = ascendingTickets.map((ticket, index) => ({
         ticket,
         displayId: ticket.displayId || `Ticket${String(index + 1).padStart(2, '0')}`,
@@ -913,6 +973,7 @@
           ticket.description,
           ticket.status,
           ticket.riskRating,
+          ticket.product,
           ticket.author,
         ].filter(Boolean).join(' ').toLocaleLowerCase();
         return searchableText.includes(query);
@@ -963,7 +1024,7 @@
         footer.className = 'ticket-footer';
         const meta = document.createElement('span');
         meta.className = 'ticket-meta';
-        meta.textContent = `${ticket.author || 'Unknown author'} · ${new Date(ticket.createdAt).toLocaleDateString()}`;
+        meta.textContent = `${ticket.product} · ${ticket.author || 'Unknown author'} · ${new Date(ticket.createdAt).toLocaleDateString()}`;
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'ticket-delete';
@@ -976,12 +1037,25 @@
     }
 
     async function loadTickets() {
-      const loaded = await api('/api/tickets');
+      const [products, loaded, counts] = await Promise.all([
+        api('/api/products'),
+        api('/api/tickets'),
+        api('/api/notes/counts'),
+      ]);
+      setProductOptions(products);
       tickets = loaded;
-      if (currentTicketId && !tickets.some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
+      noteCounts = counts;
+      if (currentTicketId && !getProductTickets().some((ticket) => ticket.id === currentTicketId)) currentTicketId = null;
       renderTickets();
-      if (!currentTicketId && tickets.length) await selectTicket(tickets[tickets.length - 1].id);
+      const productTickets = getProductTickets();
+      if (!currentTicketId && productTickets.length) await selectTicket(productTickets[productTickets.length - 1].id);
       else if (currentTicketId) renderSelectedTicket(tickets.find((ticket) => ticket.id === currentTicketId));
+    }
+
+    async function loadNoteCountsFromApi() {
+      if (appShell.hidden || !accessToken) return;
+      noteCounts = await api('/api/notes/counts');
+      updateMetrics();
     }
 
     function renderSelectedTicket(ticket) {
@@ -999,6 +1073,7 @@
       risk.textContent = ticket.riskRating || '';
       risk.className = ticket.riskRating ? `risk-tag risk-${ticket.riskRating.toLowerCase()}` : 'risk-tag';
       document.getElementById('selected-ticket-description').textContent = ticket.description;
+      document.getElementById('selected-ticket-product').textContent = `Product: ${ticket.product}`;
       document.getElementById('selected-ticket-author').textContent = `Reported by ${ticket.author || 'Unknown author'}`;
       document.getElementById('selected-ticket-date').textContent = `Created ${new Date(ticket.createdAt).toLocaleString()}`;
     }
@@ -1007,7 +1082,9 @@
       currentTicketId = ticketId;
       noteSnapshot = null;
       const ticket = tickets.find((entry) => entry.id === ticketId);
-      document.getElementById('active-ticket-label').textContent = ticket ? `${ticket.id} · ${ticket.title}` : '';
+      document.getElementById('active-ticket-label').textContent = ticket
+        ? `${ticket.product} · ${ticket.id} · ${ticket.title}`
+        : '';
       renderSelectedTicket(ticket);
       renderTickets();
       notesFeed.innerHTML = '<div class="empty">Loading audit notes…</div>';
@@ -1020,7 +1097,8 @@
       if (!ticketId || appShell.hidden || !accessToken) return;
       const notes = await api(`/api/notes/${encodeURIComponent(ticketId)}`);
       if (ticketId !== currentTicketId) return;
-      document.getElementById('note-count').textContent = notes.length;
+      noteCounts[ticketId] = notes.length;
+      updateMetrics();
       const snapshot = JSON.stringify(notes);
       if (snapshot !== noteSnapshot) {
         noteSnapshot = snapshot;
@@ -1223,9 +1301,11 @@
           headers: { 'x-master-password': password },
         });
         tickets = tickets.filter((ticket) => ticket.id !== ticketId);
+        delete noteCounts[ticketId];
         if (currentTicketId === ticketId) currentTicketId = null;
         renderTickets();
-        if (tickets.length) await selectTicket(tickets[tickets.length - 1].id);
+        const productTickets = getProductTickets();
+        if (productTickets.length) await selectTicket(productTickets[productTickets.length - 1].id);
         showToast('Ticket, notes, and associated files deleted.');
       } catch (error) { showToast(error.message, true); }
     }
@@ -1271,9 +1351,18 @@
         const ticket = await api('/api/tickets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: data.get('title'), description: data.get('description') }),
+          body: JSON.stringify({
+            title: data.get('title'),
+            description: data.get('description'),
+            product: data.get('product'),
+          }),
         });
         tickets.push(ticket);
+        noteCounts[ticket.id] = 0;
+        if (selectedProduct !== 'all' && selectedProduct !== ticket.product) {
+          selectedProduct = ticket.product;
+          document.getElementById('product-filter').value = selectedProduct;
+        }
         currentTicketId = ticket.id;
         renderTickets();
         formElement.reset();
@@ -1283,7 +1372,11 @@
       } catch (error) { showToast(error.message, true); }
     });
 
-    document.getElementById('new-ticket-button').addEventListener('click', () => document.getElementById('ticket-dialog').showModal());
+    document.getElementById('new-ticket-button').addEventListener('click', () => {
+      const category = document.getElementById('ticket-product');
+      category.value = selectedProduct !== 'all' ? selectedProduct : supportedProducts[0] || '';
+      document.getElementById('ticket-dialog').showModal();
+    });
     document.getElementById('sync-button').addEventListener('click', async () => {
       try {
         await loadTickets();

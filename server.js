@@ -17,6 +17,13 @@ const UPLOAD_DIR = process.env.STORAGE_DIR ? path.join(STORAGE_DIR, 'uploads') :
 const MASTER_PASSWORD = 'cat123123';
 const DEFAULT_USERNAME = 'Admin';
 const DEFAULT_PASSWORD = 'admin@123#';
+const DEFAULT_PRODUCT = 'SiyanoAV Total Security';
+const SUPPORTED_PRODUCTS = [
+  DEFAULT_PRODUCT,
+  'Mobile Security',
+  'Endpoint Protection',
+  'Cloud Shield',
+];
 const PASSWORD_HASH_BYTES = 64;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_FILES_PER_NOTE = 8;
@@ -93,6 +100,28 @@ function createTicketId(existingTickets) {
   return id;
 }
 
+function normalizeTicketProducts(tickets) {
+  let changed = false;
+  const normalizedTickets = tickets.map((ticket) => {
+    if (!ticket || typeof ticket !== 'object' || Array.isArray(ticket)) {
+      const error = new Error('Ticket data must contain objects.');
+      error.status = 400;
+      throw error;
+    }
+    if (ticket.product === undefined || ticket.product === null || ticket.product === '') {
+      changed = true;
+      return { ...ticket, product: DEFAULT_PRODUCT };
+    }
+    if (!SUPPORTED_PRODUCTS.includes(ticket.product)) {
+      const error = new Error(`Unsupported ticket product: ${ticket.product}`);
+      error.status = 400;
+      throw error;
+    }
+    return ticket;
+  });
+  return { tickets: normalizedTickets, changed };
+}
+
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return {
     salt,
@@ -146,6 +175,7 @@ if (!initialTickets || !initialNotes) {
     for (const ticket of legacy.tickets) {
       const converted = {
         id: createTicketId(initialTickets),
+        product: DEFAULT_PRODUCT,
         title: typeof ticket.title === 'string' ? ticket.title : 'Legacy audit ticket',
         description: typeof ticket.description === 'string' ? ticket.description : '',
         status: 'Open',
@@ -187,6 +217,9 @@ if (!initialTickets || !initialNotes) {
 if (!Array.isArray(initialTickets) || !Array.isArray(initialNotes)) {
   throw new Error('Tickets and notes storage must contain JSON arrays.');
 }
+const normalizedInitialTickets = normalizeTicketProducts(initialTickets);
+initialTickets = normalizedInitialTickets.tickets;
+if (normalizedInitialTickets.changed) atomicWriteJson(files.tickets, initialTickets);
 
 const storedUsers = readJson(files.users, []);
 let users = Array.isArray(storedUsers) ? storedUsers : [];
@@ -422,8 +455,9 @@ function parseBackupArchive(archivePath) {
     error.status = 400;
     throw error;
   }
+  const normalizedTickets = normalizeTicketProducts(tickets);
   const ticketIds = new Set();
-  for (const ticket of tickets) {
+  for (const ticket of normalizedTickets.tickets) {
     if (!ticket || typeof ticket !== 'object' || Array.isArray(ticket)
       || typeof ticket.id !== 'string' || typeof ticket.title !== 'string'
       || typeof ticket.description !== 'string' || ticketIds.has(ticket.id)) {
@@ -457,7 +491,7 @@ function parseBackupArchive(archivePath) {
       }
     }
   }
-  return { tickets, notes, uploadFiles };
+  return { tickets: normalizedTickets.tickets, notes, uploadFiles };
 }
 
 function persistUploadedFiles(filesToSave) {
@@ -588,6 +622,8 @@ app.use('/api', requireAuthentication);
 
 app.get('/api/auth/me', (req, res) => res.json({ user: req.user }));
 
+app.get('/api/products', (req, res) => res.json(SUPPORTED_PRODUCTS));
+
 app.get('/api/backup/export', (req, res, next) => {
   try {
     const zip = new AdmZip();
@@ -685,16 +721,20 @@ app.get('/api/tickets', (req, res, next) => {
 
 app.post('/api/tickets', (req, res, next) => {
   try {
-    const { title, description } = req.body || {};
+    const { title, description, product = DEFAULT_PRODUCT } = req.body || {};
     if (typeof title !== 'string' || !title.trim() || title.length > 200) {
       return res.status(400).json({ error: 'Title of Issue is required and must be at most 200 characters.' });
     }
     if (typeof description !== 'string' || !description.trim() || description.length > 10000) {
       return res.status(400).json({ error: 'Description is required and must be at most 10,000 characters.' });
     }
+    if (typeof product !== 'string' || !SUPPORTED_PRODUCTS.includes(product)) {
+      return res.status(400).json({ error: 'Select a supported product category.' });
+    }
     const tickets = getTickets();
     const ticket = {
       id: createTicketId(tickets),
+      product,
       title: title.trim(),
       description: description.trim(),
       status: 'Open',
@@ -724,6 +764,18 @@ app.delete('/api/tickets/:id', (req, res, next) => {
     atomicWriteJsonPair(files.tickets, nextTickets, files.notes, nextNotes, tickets, notes);
     removeAttachmentFiles(deletedNotes);
     return res.status(204).end();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get('/api/notes/counts', (req, res, next) => {
+  try {
+    const counts = {};
+    for (const note of getNotes()) {
+      counts[note.ticketId] = (counts[note.ticketId] || 0) + 1;
+    }
+    return res.json(counts);
   } catch (error) {
     return next(error);
   }
