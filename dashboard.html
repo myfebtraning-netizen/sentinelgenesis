@@ -313,7 +313,7 @@
     .ticket-card:nth-child(4n + 3) { --ticket-accent: #a78bfa; background: #f5f3ff; }
     .ticket-card:nth-child(4n + 4) { --ticket-accent: #38bdf8; background: #f0f9ff; }
     .ticket-card:hover { transform: translateY(-1px); border-color: #94a3b8; background: #ffffff; box-shadow: 0 5px 14px rgba(15,23,42,.09); }
-    .ticket-card.selected { border-color: #2563eb; border-left-color: var(--ticket-accent); background: #eff6ff; box-shadow: inset 3px 0 0 var(--ticket-accent), 0 3px 10px rgba(37,99,235,.12); }
+    .ticket-card.selected { border-color: #1d4ed8; border-left-color: var(--ticket-accent); background: #eff6ff; box-shadow: inset 3px 0 0 var(--ticket-accent), 0 0 0 2px rgba(37,99,235,.2), 0 4px 12px rgba(37,99,235,.16); }
     .ticket-select { color: #0f172a; }
     .ticket-head { align-items: flex-start; flex-wrap: wrap; padding-bottom: 7px; border-bottom: 1px solid rgba(0, 0, 0, 0.12); }
     .ticket-head > span { min-width: 0; flex: 1 1 120px; overflow-wrap: anywhere; }
@@ -745,6 +745,10 @@
     let recordedAudioUrl = null;
     let noteRenderVersion = 0;
     let noteSnapshot = null;
+    let ticketCardObserver = null;
+    let scrollSelectionTimer = null;
+    let pendingScrollTicketId = null;
+    let manualSelectionOverrideUntil = 0;
     let supportedProducts = [];
     let selectedProduct = 'all';
     let selectedSeverity = 'all';
@@ -759,6 +763,34 @@
     const authScreen = document.getElementById('auth-screen');
     const appShell = document.getElementById('app-shell');
     const ticketList = document.getElementById('ticket-list');
+    if ('IntersectionObserver' in window) {
+      ticketCardObserver = new IntersectionObserver((entries) => {
+        if (performance.now() < manualSelectionOverrideUntil) return;
+        const focusedEntry = entries
+          .filter((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.6)
+          .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+        if (!focusedEntry) return;
+        const ticketId = focusedEntry.target.dataset.ticketId;
+        if (ticketId === currentTicketId) {
+          clearTimeout(scrollSelectionTimer);
+          scrollSelectionTimer = null;
+          pendingScrollTicketId = null;
+          return;
+        }
+        clearTimeout(scrollSelectionTimer);
+        pendingScrollTicketId = ticketId;
+        scrollSelectionTimer = setTimeout(() => {
+          const nextTicketId = pendingScrollTicketId;
+          pendingScrollTicketId = null;
+          scrollSelectionTimer = null;
+          const cardStillVisible = [...ticketList.querySelectorAll('.ticket-card')]
+            .some((card) => card.dataset.ticketId === nextTicketId);
+          if (nextTicketId && nextTicketId !== currentTicketId && cardStillVisible) {
+            selectTicket(nextTicketId);
+          }
+        }, 150);
+      }, { root: ticketList, threshold: 0.6 });
+    }
     const ticketSearch = document.getElementById('ticket-search');
     const ticketSort = document.getElementById('ticket-sort');
     const notesFeed = document.getElementById('notes-feed');
@@ -1551,6 +1583,9 @@
       updateMetrics(productTickets);
       const resetButton = document.getElementById('reset-ticket-filters');
       resetButton.hidden = !hasActiveTicketFilters();
+      if (ticketCardObserver) {
+        ticketList.querySelectorAll('.ticket-card').forEach((card) => ticketCardObserver.unobserve(card));
+      }
       ticketList.replaceChildren();
       if (!productTickets.length) {
         updateBulkActionControls([]);
@@ -1617,6 +1652,7 @@
       for (const { ticket, displayId } of matchingTickets) {
         const card = document.createElement('article');
         card.className = `ticket-card${ticketIsSelected(ticket.id) ? ' selected' : ''}`;
+        card.dataset.ticketId = ticket.id;
         const cardSelectRow = document.createElement('div');
         cardSelectRow.className = 'ticket-card-select-row';
         const checkbox = document.createElement('input');
@@ -1661,10 +1697,17 @@
         }
         head.append(titleGroup, badges);
         select.append(head);
-        select.addEventListener('click', () => selectTicket(ticket.id));
+        select.addEventListener('click', () => {
+          clearTimeout(scrollSelectionTimer);
+          scrollSelectionTimer = null;
+          pendingScrollTicketId = null;
+          manualSelectionOverrideUntil = performance.now() + 350;
+          selectTicket(ticket.id);
+        });
         cardSelectRow.append(checkbox, select);
         card.append(cardSelectRow);
         ticketList.append(card);
+        if (ticketCardObserver) ticketCardObserver.observe(card);
       }
     }
 
