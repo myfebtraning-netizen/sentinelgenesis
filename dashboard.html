@@ -478,7 +478,6 @@
       <div class="toolbar-inner">
         <div class="header-actions">
           <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
-          <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
           <button class="button primary small" id="executive-report-button" type="button">Export Report</button>
           <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
           <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
@@ -1986,14 +1985,6 @@
       const category = document.getElementById('ticket-product');
       category.value = selectedProduct !== 'all' ? selectedProduct : supportedProducts[0] || '';
       document.getElementById('ticket-dialog').showModal();
-    });
-    document.getElementById('sync-button').addEventListener('click', async () => {
-      try {
-        await loadTickets();
-        if (currentTicketId) await loadAuditNotesFromApi();
-        document.getElementById('sync-state').textContent = `Synced · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-        showToast('Synced!');
-      } catch (error) { showToast(error.message, true); }
     });
     document.getElementById('logout-button').addEventListener('click', () => signOut());
 
