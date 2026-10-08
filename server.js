@@ -2,7 +2,9 @@ const express = require('express');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const os = require('node:os');
 const multer = require('multer');
+const AdmZip = require('adm-zip');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -18,6 +20,9 @@ const DEFAULT_PASSWORD = 'admin@123#';
 const PASSWORD_HASH_BYTES = 64;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_FILES_PER_NOTE = 8;
+const MAX_BACKUP_SIZE = 250 * 1024 * 1024;
+const MAX_BACKUP_CONTENT_SIZE = 500 * 1024 * 1024;
+const MAX_BACKUP_ENTRIES = 5000;
 
 for (const directory of [DATA_DIR, PUBLIC_UPLOAD_DIR, PUBLIC_IMAGE_DIR, STORAGE_DIR, UPLOAD_DIR]) {
   fs.mkdirSync(directory, { recursive: true });
@@ -275,6 +280,186 @@ const upload = multer({
   },
 });
 
+const backupUpload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, callback) {
+      callback(null, req.backupTempDir);
+    },
+    filename(req, file, callback) {
+      callback(null, `${crypto.randomUUID()}.zip`);
+    },
+  }),
+  limits: { fileSize: MAX_BACKUP_SIZE, files: 1, fields: 1, fieldSize: 1000 },
+  fileFilter(req, file, callback) {
+    if (path.extname(file.originalname).toLowerCase() !== '.zip') {
+      const error = new Error('Select a ZIP backup file.');
+      error.status = 400;
+      return callback(error);
+    }
+    return callback(null, true);
+  },
+});
+
+function receiveBackupUpload(req, res, next) {
+  req.backupTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-backup-'));
+  backupUpload.single('backupFile')(req, res, (error) => {
+    if (error) {
+      try {
+        fs.rmSync(req.backupTempDir, { recursive: true, force: true });
+      } catch (cleanupError) {
+        console.error(`Unable to clean temporary backup upload: ${cleanupError.message}`);
+      }
+      return next(error);
+    }
+    return next();
+  });
+}
+
+function parseBackupArchive(archivePath) {
+  let zip;
+  let entries;
+  try {
+    zip = new AdmZip(archivePath);
+    entries = zip.getEntries();
+  } catch {
+    const error = new Error('The uploaded file is not a valid ZIP backup.');
+    error.status = 400;
+    throw error;
+  }
+
+  if (entries.length > MAX_BACKUP_ENTRIES) {
+    const error = new Error('The backup contains too many entries.');
+    error.status = 400;
+    throw error;
+  }
+  let totalSize = 0;
+  const uploadFiles = [];
+  const availableUploads = new Set();
+  const normalizedUploadNames = new Set();
+  const seenEntries = new Set();
+  let tickets;
+  let notes;
+  for (const entry of entries) {
+    if (entry.entryName.includes('\\') || entry.entryName.startsWith('/') || seenEntries.has(entry.entryName)) {
+      const error = new Error('The backup contains an unsafe or duplicate path.');
+      error.status = 400;
+      throw error;
+    }
+    seenEntries.add(entry.entryName);
+    if (entry.isDirectory) {
+      if (!['data/', 'public/', 'public/uploads/'].includes(entry.entryName)) {
+        const error = new Error('The backup contains an unexpected directory.');
+        error.status = 400;
+        throw error;
+      }
+      continue;
+    }
+    const entrySize = entry.header.size;
+    if (!Number.isSafeInteger(entrySize) || entrySize < 0 || entrySize > MAX_BACKUP_CONTENT_SIZE) {
+      const error = new Error('The backup contains an invalid or oversized file.');
+      error.status = 400;
+      throw error;
+    }
+    totalSize += entrySize;
+    if (totalSize > MAX_BACKUP_CONTENT_SIZE) {
+      const error = new Error('The uncompressed backup exceeds the allowed size.');
+      error.status = 400;
+      throw error;
+    }
+    if (entry.entryName === 'data/tickets.json' || entry.entryName === 'data/notes.json') {
+      if (entrySize > 20 * 1024 * 1024) {
+        const error = new Error('The backup JSON file is too large.');
+        error.status = 400;
+        throw error;
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(entry.getData().toString('utf8'));
+      } catch {
+        const error = new Error(`The backup entry ${entry.entryName} is not valid JSON.`);
+        error.status = 400;
+        throw error;
+      }
+      if (!Array.isArray(parsed)) {
+        const error = new Error(`${entry.entryName} must contain a JSON array.`);
+        error.status = 400;
+        throw error;
+      }
+      if (entry.entryName === 'data/tickets.json') tickets = parsed;
+      else notes = parsed;
+      continue;
+    }
+
+    const uploadPrefix = 'public/uploads/';
+    const fileName = entry.entryName.startsWith(uploadPrefix)
+      ? entry.entryName.slice(uploadPrefix.length)
+      : '';
+    if (!fileName || fileName.length > 255 || fileName === '.' || fileName === '..'
+      || /[\\/\x00-\x1f<>:"|?*]/.test(fileName) || /[. ]$/.test(fileName)) {
+      const error = new Error('The backup contains an unexpected or unsafe file path.');
+      error.status = 400;
+      throw error;
+    }
+    const normalizedFileName = fileName.toLowerCase();
+    if (normalizedUploadNames.has(normalizedFileName)) {
+      const error = new Error('The backup contains duplicate attachment files.');
+      error.status = 400;
+      throw error;
+    }
+    normalizedUploadNames.add(normalizedFileName);
+    availableUploads.add(fileName);
+    try {
+      uploadFiles.push({ fileName, data: entry.getData() });
+    } catch {
+      const error = new Error('The backup contains an unreadable attachment.');
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  if (!tickets || !notes) {
+    const error = new Error('The ZIP must contain data/tickets.json and data/notes.json.');
+    error.status = 400;
+    throw error;
+  }
+  const ticketIds = new Set();
+  for (const ticket of tickets) {
+    if (!ticket || typeof ticket !== 'object' || Array.isArray(ticket)
+      || typeof ticket.id !== 'string' || typeof ticket.title !== 'string'
+      || typeof ticket.description !== 'string' || ticketIds.has(ticket.id)) {
+      const error = new Error('The backup contains invalid or duplicate ticket data.');
+      error.status = 400;
+      throw error;
+    }
+    ticketIds.add(ticket.id);
+  }
+  const noteIds = new Set();
+  for (const note of notes) {
+    if (!note || typeof note !== 'object' || Array.isArray(note)
+      || typeof note.id !== 'string' || noteIds.has(note.id)
+      || typeof note.ticketId !== 'string' || !ticketIds.has(note.ticketId)
+      || typeof note.text !== 'string'
+      || (note.attachments !== undefined && !Array.isArray(note.attachments))) {
+      const error = new Error('The backup contains invalid note data.');
+      error.status = 400;
+      throw error;
+    }
+    noteIds.add(note.id);
+    for (const attachment of note.attachments || []) {
+      const fileName = attachment && attachment.fileName;
+      if (typeof fileName !== 'string' || !/^[\da-f-]{36}\.[a-z0-9]+$/i.test(fileName)
+        || !EXTENSION_MIMES.has(path.extname(fileName).toLowerCase())
+        || !availableUploads.has(fileName) || typeof attachment.mimeType !== 'string'
+        || EXTENSION_MIMES.get(path.extname(fileName).toLowerCase()) !== attachment.mimeType) {
+        const error = new Error('The backup references a missing or invalid attachment.');
+        error.status = 400;
+        throw error;
+      }
+    }
+  }
+  return { tickets, notes, uploadFiles };
+}
+
 function persistUploadedFiles(filesToSave) {
   const saved = [];
   try {
@@ -402,6 +587,93 @@ app.post('/api/auth/reset', (req, res, next) => {
 app.use('/api', requireAuthentication);
 
 app.get('/api/auth/me', (req, res) => res.json({ user: req.user }));
+
+app.get('/api/backup/export', (req, res, next) => {
+  try {
+    const zip = new AdmZip();
+    zip.addFile('data/tickets.json', fs.readFileSync(files.tickets));
+    zip.addFile('data/notes.json', fs.readFileSync(files.notes));
+    for (const entry of fs.readdirSync(UPLOAD_DIR, { withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      zip.addFile(`public/uploads/${entry.name}`, fs.readFileSync(path.join(UPLOAD_DIR, entry.name)));
+    }
+    const filename = `sentinel-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+    res.attachment(filename);
+    res.type('application/zip');
+    return res.send(zip.toBuffer());
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/backup/import', receiveBackupUpload, (req, res, next) => {
+  let stagedUploadsDir;
+  let previousUploadsDir;
+  let previousUploadsMoved = false;
+  let stagedUploadsInstalled = false;
+  let committed = false;
+  try {
+    if (!req.file) {
+      const error = new Error('Select a ZIP backup file to import.');
+      error.status = 400;
+      throw error;
+    }
+    if (!masterPasswordMatches(req.body?.masterPassword)) {
+      return res.status(401).json({ error: 'Incorrect Master Password. Access Denied.' });
+    }
+
+    const { tickets, notes, uploadFiles } = parseBackupArchive(req.file.path);
+    const backupId = crypto.randomUUID();
+    stagedUploadsDir = path.join(path.dirname(UPLOAD_DIR), `.sentinel-backup-stage-${backupId}`);
+    previousUploadsDir = path.join(path.dirname(UPLOAD_DIR), `.sentinel-backup-previous-${backupId}`);
+    fs.mkdirSync(stagedUploadsDir);
+    for (const uploadFile of uploadFiles) {
+      fs.writeFileSync(path.join(stagedUploadsDir, uploadFile.fileName), uploadFile.data, { flag: 'wx' });
+    }
+
+    fs.renameSync(UPLOAD_DIR, previousUploadsDir);
+    previousUploadsMoved = true;
+    fs.renameSync(stagedUploadsDir, UPLOAD_DIR);
+    stagedUploadsDir = null;
+    stagedUploadsInstalled = true;
+    atomicWriteJsonPair(files.tickets, tickets, files.notes, notes, getTickets(), getNotes());
+    committed = true;
+
+    try {
+      fs.rmSync(previousUploadsDir, { recursive: true, force: true });
+    } catch (cleanupError) {
+      console.error(`Unable to remove previous attachment files after backup import: ${cleanupError.message}`);
+    }
+    return res.json({ message: 'Backup imported successfully.' });
+  } catch (error) {
+    if (!committed) {
+      if (stagedUploadsInstalled) {
+        try {
+          fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
+        } catch (rollbackError) {
+          console.error(`Unable to remove staged attachment files after failed backup import: ${rollbackError.message}`);
+        }
+      }
+      if (previousUploadsMoved) {
+        try {
+          fs.renameSync(previousUploadsDir, UPLOAD_DIR);
+        } catch (rollbackError) {
+          console.error(`Unable to restore attachment files after failed backup import: ${rollbackError.message}`);
+        }
+      }
+    }
+    return next(error);
+  } finally {
+    for (const temporaryPath of [stagedUploadsDir, req.backupTempDir]) {
+      if (!temporaryPath) continue;
+      try {
+        fs.rmSync(temporaryPath, { recursive: true, force: true });
+      } catch (cleanupError) {
+        console.error(`Unable to clean backup import temporary files: ${cleanupError.message}`);
+      }
+    }
+  }
+});
 
 app.get('/api/tickets', (req, res, next) => {
   try {
@@ -589,6 +861,13 @@ app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
   if (error instanceof multer.MulterError) {
     const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    if (req.path.startsWith('/api/backup/')) {
+      return res.status(status).json({
+        error: error.code === 'LIMIT_FILE_SIZE'
+          ? 'The backup ZIP must be 250 MB or smaller.'
+          : 'Backup upload limit exceeded.',
+      });
+    }
     return res.status(status).json({
       error: error.code === 'LIMIT_FILE_SIZE'
         ? 'Each attachment must be 10 MB or smaller.'

@@ -179,6 +179,7 @@
     .delete-dialog { width: min(410px, calc(100% - 24px)); }
     .delete-message { min-height: 18px; color: var(--red); font-size: 11px; }
     .delete-actions { display: flex; justify-content: end; gap: 8px; }
+    .backup-warning { margin: 0 0 14px; color: #ffd08a; font-size: 12px; line-height: 1.55; }
     .toast { position: fixed; right: 21px; bottom: 21px; z-index: 30; max-width: min(390px, calc(100vw - 32px)); border: 1px solid rgba(56,189,248,.2); border-radius: 10px; padding: 11px 14px; color: #eaf7ff; background: #12233e; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
     .toast.visible { opacity: 1; transform: translateY(0); }
     .toast.error { border-color: rgba(251,113,133,.3); background: #3a1928; }
@@ -451,6 +452,9 @@
         <div class="header-actions">
           <button class="button primary" id="new-ticket-button" type="button">＋ New Ticket</button>
           <button class="button ghost" id="sync-button" type="button">🔄 Sync Notes</button>
+          <button class="button ghost small" id="export-backup-button" type="button">📥 Export All Tickets</button>
+          <button class="button ghost small" id="import-backup-button" type="button">📤 Import All Tickets</button>
+          <input type="file" id="importFileInput" accept=".zip" hidden>
           <span class="toolbar-status" id="sync-state" aria-live="polite">Connected</span>
         </div>
       </div>
@@ -572,6 +576,17 @@
       </form>
     </div>
   </dialog>
+  <dialog class="delete-dialog" id="backup-import-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-head"><div><h3>Import ticket backup</h3><p>Confirm the backup restore before continuing.</p></div><button class="close" type="button" data-close="backup-import-dialog" aria-label="Close dialog">×</button></div>
+      <p class="backup-warning">All current ticket data, notes, and attachments will be overwritten. Do you wish to continue?</p>
+      <form class="form-stack" id="backup-import-form">
+        <div class="field"><label for="backup-master-password">Master password</label><input id="backup-master-password" name="masterPassword" type="password" autocomplete="current-password" required></div>
+        <div class="delete-message" id="backup-import-message" role="alert" aria-live="assertive"></div>
+        <div class="delete-actions"><button class="button ghost small" type="button" data-close="backup-import-dialog">Cancel</button><button class="button danger small" id="backup-import-submit" type="submit">Import and overwrite</button></div>
+      </form>
+    </div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -649,6 +664,72 @@
         throw new Error(`Could not load attachment (${response.status}).`);
       }
       return response.blob();
+    }
+
+    async function exportBackup() {
+      try {
+        const response = await fetch('/api/backup/export', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!response.ok) {
+          let message = `Backup export failed (${response.status}).`;
+          try { message = (await response.json()).error || message; } catch {}
+          if (response.status === 401) signOut(false);
+          throw new Error(message);
+        }
+        const backup = URL.createObjectURL(await response.blob());
+        const link = document.createElement('a');
+        const disposition = response.headers.get('content-disposition') || '';
+        const filename = disposition.match(/filename="?([^";]+)"?/i);
+        link.href = backup;
+        link.download = filename ? filename[1] : `sentinel-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(backup), 1000);
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+    async function submitImport(event) {
+      event.preventDefault();
+      const fileInput = document.getElementById('importFileInput');
+      const passwordInput = document.getElementById('backup-master-password');
+      const message = document.getElementById('backup-import-message');
+      const submitButton = document.getElementById('backup-import-submit');
+      const file = fileInput.files[0];
+      if (!file) {
+        message.textContent = 'Select a ZIP backup file.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.set('backupFile', file);
+      formData.set('masterPassword', passwordInput.value);
+      message.textContent = '';
+      submitButton.disabled = true;
+      try {
+        const response = await fetch('/api/backup/import', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        });
+        let result = {};
+        try { result = await response.json(); } catch {}
+        if (!response.ok) {
+          if (response.status === 401 && accessToken) signOut(false);
+          throw new Error(result.error || `Backup import failed (${response.status}).`);
+        }
+        document.getElementById('backup-import-dialog').close();
+        window.alert('Backup imported successfully. The page will reload.');
+        window.location.reload();
+      } catch (error) {
+        message.textContent = error.message;
+        window.alert(error.message);
+      } finally {
+        submitButton.disabled = false;
+      }
     }
 
     function setAuthTab(name) {
@@ -1286,6 +1367,25 @@
     }
 
     document.getElementById('record-button').addEventListener('click', toggleRecording);
+    document.getElementById('export-backup-button').addEventListener('click', exportBackup);
+    document.getElementById('import-backup-button').addEventListener('click', () => {
+      const fileInput = document.getElementById('importFileInput');
+      fileInput.value = '';
+      fileInput.click();
+    });
+    document.getElementById('importFileInput').addEventListener('change', (event) => {
+      const fileInput = event.currentTarget;
+      if (!fileInput.files.length) return;
+      document.getElementById('backup-import-message').textContent = '';
+      document.getElementById('backup-import-dialog').showModal();
+      document.getElementById('backup-master-password').focus();
+    });
+    document.getElementById('backup-import-form').addEventListener('submit', submitImport);
+    document.getElementById('backup-import-dialog').addEventListener('close', () => {
+      document.getElementById('backup-import-form').reset();
+      document.getElementById('importFileInput').value = '';
+      document.getElementById('backup-import-message').textContent = '';
+    });
     document.querySelectorAll('[data-close]').forEach((button) => {
       button.addEventListener('click', () => document.getElementById(button.dataset.close).close());
     });
