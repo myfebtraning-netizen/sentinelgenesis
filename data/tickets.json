@@ -1,0 +1,56 @@
+[
+  {
+    "id": "TCK-01",
+    "title": "Real-time Scanning / Advance Threat Shield",
+    "description": "Malware appearing clean in manual scans while Real-time Scanning differs.",
+    "status": "Open",
+    "severity": "High",
+    "author": "Admin",
+    "createdAt": "2026-10-08T03:49:42.000Z"
+  },
+  {
+    "id": "TCK-02",
+    "title": "Firewall Rule Synchronization Error",
+    "description": "Custom inbound blocking rules fail to persist after system reboot.",
+    "status": "Open",
+    "severity": "Medium",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:00:00.000Z"
+  },
+  {
+    "id": "TCK-03",
+    "title": "Quarantine Folder Permission Denied",
+    "description": "System throws access errors when attempting to restore isolated items.",
+    "status": "Open",
+    "severity": "Low",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:10:00.000Z"
+  },
+  {
+    "id": "TCK-04",
+    "title": "Scheduled Full Scan Timeout",
+    "description": "Background scans freeze indefinitely when encountering large compressed archives.",
+    "status": "Open",
+    "severity": "High",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:20:00.000Z"
+  },
+  {
+    "id": "TCK-05",
+    "title": "Email Notification Delivery Failure",
+    "description": "Alert dispatchers fail to trigger SMTP authentication during critical events.",
+    "status": "Open",
+    "severity": "Medium",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:30:00.000Z"
+  },
+  {
+    "id": "TCK-06",
+    "title": "Dashboard Session Timeout Interval",
+    "description": "Admin tokens expire prematurely during extended diagnostic reviews.",
+    "status": "Open",
+    "severity": "Low",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:40:00.000Z"
+  }
+]

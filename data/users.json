@@ -1,0 +1,23 @@
+[
+  {
+    "username": "Admin",
+    "role": "admin",
+    "salt": "3d309290fe60be3cb7d6e5f45e723317",
+    "passwordHash": "ab1f7c331952f5f0c221b42bc1415478d2e7e125e6d858b63b667081b8af8a4d5a1850d5cd54226ec479d9b356af48ea36a6de62dba432912d548648a0bdee4a",
+    "createdAt": "2026-10-07T19:22:29.790Z"
+  },
+  {
+    "username": "Sanjay",
+    "role": "auditor",
+    "salt": "59d5ec4c2c568d28056b34f1a0889a4a",
+    "passwordHash": "ea1d5b2967fcb760421418a0af33bac64bdcbdc5f94c84db0b000aa1b39c8a7b32c7b835d5f6f668ecc5fb6c5c4e3c7a562df1be30b07f750253440312ee6493",
+    "createdAt": "2026-10-07T19:25:48.405Z"
+  },
+  {
+    "username": "Prashant",
+    "role": "auditor",
+    "salt": "ce83e378edbbfbaa00aa3807088a3fad",
+    "passwordHash": "0b633c6cc26801340663f8ed4f69c7edf536b551fc45375b3264ccc535ee941f521786673059f3668034b2039b3e3e557f4534abfa1719ef481293285b72b4a4",
+    "createdAt": "2026-10-07T19:26:12.215Z"
+  }
+]

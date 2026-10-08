@@ -1,0 +1,44 @@
+[
+  {
+    "id": "NOTE-01",
+    "ticketId": "TCK-01",
+    "content": "Verified real-time scanning behavior and checked exclusion paths.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T03:50:00.000Z"
+  },
+  {
+    "id": "NOTE-02",
+    "ticketId": "TCK-02",
+    "content": "Tested custom inbound firewall rule persistence across service reboots.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:01:00.000Z"
+  },
+  {
+    "id": "NOTE-03",
+    "ticketId": "TCK-03",
+    "content": "Checked file permissions on quarantine directory storage volumes.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:11:00.000Z"
+  },
+  {
+    "id": "NOTE-04",
+    "ticketId": "TCK-04",
+    "content": "Analyzed background scan timeout behavior with large nested archives.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:21:00.000Z"
+  },
+  {
+    "id": "NOTE-05",
+    "ticketId": "TCK-05",
+    "content": "Verified SMTP connection strings and alert dispatcher error logs.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:31:00.000Z"
+  },
+  {
+    "id": "NOTE-06",
+    "ticketId": "TCK-06",
+    "content": "Tested token expiration thresholds during active administrative sessions.",
+    "author": "Admin",
+    "createdAt": "2026-10-08T04:41:00.000Z"
+  }
+]
