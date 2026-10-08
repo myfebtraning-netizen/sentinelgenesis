@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const os = require('node:os');
 const multer = require('multer');
 const AdmZip = require('adm-zip');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -14,6 +15,7 @@ const PUBLIC_UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const PUBLIC_IMAGE_DIR = path.join(PUBLIC_DIR, 'images');
 const STORAGE_DIR = process.env.STORAGE_DIR ? path.resolve(process.env.STORAGE_DIR) : DATA_DIR;
 const UPLOAD_DIR = process.env.STORAGE_DIR ? path.join(STORAGE_DIR, 'uploads') : PUBLIC_UPLOAD_DIR;
+const MONGODB_URI = process.env.MONGODB_URI;
 const MASTER_PASSWORD = 'cat123123';
 const DEFAULT_USERNAME = 'Admin';
 const DEFAULT_PASSWORD = 'admin@123#';
@@ -59,6 +61,34 @@ const MIME_EXTENSIONS = new Map([
 ]);
 const EXTENSION_MIMES = new Map([...MIME_EXTENSIONS].map(([mime, extension]) => [extension, mime]));
 
+const activityLogSchema = new mongoose.Schema({
+  action: { type: String, required: true },
+  statusFrom: String,
+  statusTo: String,
+  performedBy: { type: String, required: true },
+  timestamp: { type: Date, required: true },
+}, { _id: false });
+const ticketSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  status: String,
+  severity: String,
+  riskRating: String,
+  product: String,
+  activityLog: { type: [activityLogSchema], default: [] },
+}, {
+  strict: false,
+  versionKey: false,
+  collection: 'tickets',
+});
+const Ticket = mongoose.models.Ticket || mongoose.model('Ticket', ticketSchema);
+const migrationSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  completedAt: { type: Date, required: true },
+}, { versionKey: false, collection: 'migrations' });
+const Migration = mongoose.models.Migration || mongoose.model('Migration', migrationSchema);
+
 function atomicWriteJson(filePath, value) {
   const temporaryPath = `${filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
   fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -66,24 +96,6 @@ function atomicWriteJson(filePath, value) {
     fs.renameSync(temporaryPath, filePath);
   } catch (error) {
     fs.rmSync(temporaryPath, { force: true });
-    throw error;
-  }
-}
-
-function atomicWriteJsonPair(firstPath, firstValue, secondPath, secondValue, oldFirst, oldSecond) {
-  const firstTemp = `${firstPath}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  const secondTemp = `${secondPath}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(firstTemp, `${JSON.stringify(firstValue, null, 2)}\n`, 'utf8');
-  fs.writeFileSync(secondTemp, `${JSON.stringify(secondValue, null, 2)}\n`, 'utf8');
-  let firstCommitted = false;
-  try {
-    fs.renameSync(firstTemp, firstPath);
-    firstCommitted = true;
-    fs.renameSync(secondTemp, secondPath);
-  } catch (error) {
-    fs.rmSync(firstTemp, { force: true });
-    fs.rmSync(secondTemp, { force: true });
-    if (firstCommitted) atomicWriteJson(firstPath, oldFirst);
     throw error;
   }
 }
@@ -295,10 +307,48 @@ if (fs.existsSync(files.secret)) {
   fs.writeFileSync(files.secret, authSecret, { mode: 0o600, flag: 'wx' });
 }
 
-function getTickets() {
-  const result = readJson(files.tickets, []);
-  if (!Array.isArray(result)) throw new Error('tickets.json must contain an array.');
-  return result;
+function toMongoTicket(ticket) {
+  const { id, _id, ...fields } = ticket;
+  return { ...fields, _id: id || _id };
+}
+
+function toApiTicket(document) {
+  const ticket = document.toObject ? document.toObject() : document;
+  const { _id, __v, ...fields } = ticket;
+  return {
+    ...fields,
+    id: String(_id),
+    activityLog: (fields.activityLog || []).map((event) => ({
+      ...event,
+      timestamp: new Date(event.timestamp).toISOString(),
+    })),
+  };
+}
+
+async function getTickets() {
+  const documents = await Ticket.find({}).lean();
+  return documents.map(toApiTicket);
+}
+
+async function initializeMongo() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI must be configured with the MongoDB Atlas connection string.');
+  }
+  await mongoose.connect(MONGODB_URI);
+  try {
+    await Ticket.createCollection();
+  } catch (error) {
+    if (error.code !== 48) throw error;
+  }
+
+  const migrationId = 'legacy-json-tickets-v1';
+  if (await Migration.exists({ _id: migrationId })) return;
+  if (!(await Ticket.exists({}))) {
+    if (initialTickets.length) {
+      await Ticket.insertMany(initialTickets.map(toMongoTicket));
+    }
+  }
+  await Migration.create({ _id: migrationId, completedAt: new Date() });
 }
 
 function normalizedTicketStatus(value) {
@@ -723,10 +773,10 @@ app.get('/api/auth/me', (req, res) => res.json({ user: req.user }));
 
 app.get('/api/products', (req, res) => res.json(SUPPORTED_PRODUCTS));
 
-app.get('/api/backup/export', (req, res, next) => {
+app.get('/api/backup/export', async (req, res, next) => {
   try {
     const zip = new AdmZip();
-    zip.addFile('data/tickets.json', fs.readFileSync(files.tickets));
+    zip.addFile('data/tickets.json', Buffer.from(`${JSON.stringify(await getTickets(), null, 2)}\n`));
     zip.addFile('data/notes.json', fs.readFileSync(files.notes));
     for (const entry of fs.readdirSync(UPLOAD_DIR, { withFileTypes: true })) {
       if (!entry.isFile()) continue;
@@ -741,7 +791,7 @@ app.get('/api/backup/export', (req, res, next) => {
   }
 });
 
-app.post('/api/backup/import', receiveBackupUpload, (req, res, next) => {
+app.post('/api/backup/import', receiveBackupUpload, async (req, res, next) => {
   let stagedUploadsDir;
   let previousUploadsDir;
   let previousUploadsMoved = false;
@@ -771,7 +821,28 @@ app.post('/api/backup/import', receiveBackupUpload, (req, res, next) => {
     fs.renameSync(stagedUploadsDir, UPLOAD_DIR);
     stagedUploadsDir = null;
     stagedUploadsInstalled = true;
-    atomicWriteJsonPair(files.tickets, tickets, files.notes, notes, getTickets(), getNotes());
+    const previousNotes = getNotes();
+    const session = await mongoose.startSession();
+    let notesReplaced = false;
+    try {
+      await session.withTransaction(async () => {
+        await Ticket.deleteMany({}, { session });
+        if (tickets.length) await Ticket.insertMany(tickets.map(toMongoTicket), { session });
+        atomicWriteJson(files.notes, notes);
+        notesReplaced = true;
+      });
+    } catch (error) {
+      if (notesReplaced) {
+        try {
+          atomicWriteJson(files.notes, previousNotes);
+        } catch (rollbackError) {
+          console.error(`Unable to restore notes after failed MongoDB backup import: ${rollbackError.message}`);
+        }
+      }
+      throw error;
+    } finally {
+      await session.endSession();
+    }
     committed = true;
 
     try {
@@ -810,17 +881,17 @@ app.post('/api/backup/import', receiveBackupUpload, (req, res, next) => {
   }
 });
 
-app.get('/api/tickets', (req, res, next) => {
+app.get('/api/tickets', async (req, res, next) => {
   try {
-    return res.json(filterTickets(getTickets(), req.query));
+    return res.json(filterTickets(await getTickets(), req.query));
   } catch (error) {
     return next(error);
   }
 });
 
-app.get('/api/reports/summary', (req, res, next) => {
+app.get('/api/reports/summary', async (req, res, next) => {
   try {
-    const tickets = filterTickets(getTickets(), req.query);
+    const tickets = filterTickets(await getTickets(), req.query);
     const ticketIds = new Set(tickets.map((ticket) => ticket.id));
     const notes = getNotes().filter((note) => ticketIds.has(note.ticketId));
     const notesByTicket = new Map();
@@ -860,7 +931,7 @@ app.get('/api/reports/summary', (req, res, next) => {
   }
 });
 
-app.post('/api/tickets', (req, res, next) => {
+app.post('/api/tickets', async (req, res, next) => {
   try {
     const {
       title,
@@ -901,7 +972,7 @@ app.post('/api/tickets', (req, res, next) => {
       }
       return normalized;
     }, []);
-    const tickets = getTickets();
+    const tickets = await getTickets();
     const createdAt = new Date().toISOString();
     const ticket = {
       id: createTicketId(tickets),
@@ -920,15 +991,14 @@ app.post('/api/tickets', (req, res, next) => {
     if (normalizedSeverity) {
       appendTicketActivity(ticket, 'severity_changed', null, normalizedSeverity, req.user.username, createdAt);
     }
-    tickets.push(ticket);
-    atomicWriteJson(files.tickets, tickets);
-    return res.status(201).json(ticket);
+    const createdTicket = await Ticket.create(toMongoTicket(ticket));
+    return res.status(201).json(toApiTicket(createdTicket));
   } catch (error) {
     return next(error);
   }
 });
 
-app.patch('/api/tickets/:id', (req, res, next) => {
+async function updateTicket(req, res, next) {
   try {
     const updates = req.body;
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
@@ -939,11 +1009,22 @@ app.patch('/api/tickets/:id', (req, res, next) => {
     if (!fields.length || fields.some((field) => !allowedFields.has(field))) {
       return res.status(400).json({ error: 'Only status, severity, and product category can be updated.' });
     }
-    const tickets = getTickets();
-    const ticket = tickets.find((candidate) => candidate.id === req.params.id);
-    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+    const document = await Ticket.findById(req.params.id).lean();
+    if (!document) return res.status(404).json({ error: 'Ticket not found.' });
+    const ticket = toApiTicket(document);
 
     const timestamp = new Date().toISOString();
+    const updatesToSet = {};
+    const activityEvents = [];
+    const recordActivity = (action, statusFrom, statusTo) => {
+      activityEvents.push({
+        action,
+        statusFrom,
+        statusTo,
+        performedBy: req.user.username,
+        timestamp: new Date(timestamp),
+      });
+    };
     if (Object.hasOwn(updates, 'status')) {
       const nextStatus = canonicalTicketStatus(updates.status);
       if (!nextStatus) {
@@ -951,8 +1032,8 @@ app.patch('/api/tickets/:id', (req, res, next) => {
       }
       const currentStatus = ticket.status || 'Open';
       if (normalizedTicketStatus(currentStatus) !== normalizedTicketStatus(nextStatus)) {
-        appendTicketActivity(ticket, 'status_changed', currentStatus, nextStatus, req.user.username, timestamp);
-        ticket.status = nextStatus;
+        recordActivity('status_changed', currentStatus, nextStatus);
+        updatesToSet.status = nextStatus;
       }
     }
     if (Object.hasOwn(updates, 'severity')) {
@@ -964,13 +1045,13 @@ app.patch('/api/tickets/:id', (req, res, next) => {
       }
       const currentSeverity = ticket.severity || ticket.riskRating || null;
       if (currentSeverity !== nextSeverity) {
-        appendTicketActivity(ticket, 'severity_changed', currentSeverity, nextSeverity, req.user.username, timestamp);
+        recordActivity('severity_changed', currentSeverity, nextSeverity);
         if (nextSeverity) {
-          ticket.severity = nextSeverity;
-          ticket.riskRating = nextSeverity;
+          updatesToSet.severity = nextSeverity;
+          updatesToSet.riskRating = nextSeverity;
         } else {
-          delete ticket.severity;
-          delete ticket.riskRating;
+          updatesToSet.severity = null;
+          updatesToSet.riskRating = null;
         }
       }
     }
@@ -979,30 +1060,59 @@ app.patch('/api/tickets/:id', (req, res, next) => {
         return res.status(400).json({ error: 'Select a supported product category.' });
       }
       if (ticket.product !== updates.product) {
-        appendTicketActivity(ticket, 'product_changed', ticket.product || null, updates.product, req.user.username, timestamp);
-        ticket.product = updates.product;
+        recordActivity('product_changed', ticket.product || null, updates.product);
+        updatesToSet.product = updates.product;
       }
     }
-    atomicWriteJson(files.tickets, tickets);
-    return res.json(ticket);
+    if (!activityEvents.length && !Object.keys(updatesToSet).length) return res.json(ticket);
+    const mongoUpdate = {};
+    if (Object.keys(updatesToSet).length) mongoUpdate.$set = updatesToSet;
+    if (activityEvents.length) mongoUpdate.$push = { activityLog: { $each: activityEvents } };
+    const updatedDocument = await Ticket.findByIdAndUpdate(req.params.id, mongoUpdate, {
+      new: true,
+      runValidators: true,
+    }).lean();
+    if (!updatedDocument) return res.status(404).json({ error: 'Ticket not found.' });
+    return res.json(toApiTicket(updatedDocument));
   } catch (error) {
     return next(error);
   }
-});
+}
 
-app.delete('/api/tickets/:id', (req, res, next) => {
+app.patch('/api/tickets/:id', updateTicket);
+app.put('/api/tickets/:id', updateTicket);
+
+app.delete('/api/tickets/:id', async (req, res, next) => {
   if (!masterPasswordMatches(masterPasswordFromRequest(req))) {
     return res.status(403).json({ error: 'Incorrect Master Password. Access Denied.' });
   }
   try {
-    const tickets = getTickets();
-    const ticket = tickets.find((candidate) => candidate.id === req.params.id);
-    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+    const ticketDocument = await Ticket.findById(req.params.id).lean();
+    if (!ticketDocument) return res.status(404).json({ error: 'Ticket not found.' });
+    const ticket = toApiTicket(ticketDocument);
     const notes = getNotes();
     const deletedNotes = notes.filter((note) => note.ticketId === ticket.id);
-    const nextTickets = tickets.filter((candidate) => candidate.id !== ticket.id);
     const nextNotes = notes.filter((note) => note.ticketId !== ticket.id);
-    atomicWriteJsonPair(files.tickets, nextTickets, files.notes, nextNotes, tickets, notes);
+    const session = await mongoose.startSession();
+    let notesReplaced = false;
+    try {
+      await session.withTransaction(async () => {
+        await Ticket.findByIdAndDelete(ticket.id, { session });
+        atomicWriteJson(files.notes, nextNotes);
+        notesReplaced = true;
+      });
+    } catch (error) {
+      if (notesReplaced) {
+        try {
+          atomicWriteJson(files.notes, notes);
+        } catch (rollbackError) {
+          console.error(`Unable to restore notes after failed MongoDB ticket deletion: ${rollbackError.message}`);
+        }
+      }
+      throw error;
+    } finally {
+      await session.endSession();
+    }
     removeAttachmentFiles(deletedNotes);
     return res.status(204).end();
   } catch (error) {
@@ -1022,9 +1132,9 @@ app.get('/api/notes/counts', (req, res, next) => {
   }
 });
 
-app.get('/api/notes/:ticketId', (req, res, next) => {
+app.get('/api/notes/:ticketId', async (req, res, next) => {
   try {
-    if (!getTickets().some((ticket) => ticket.id === req.params.ticketId)) {
+    if (!(await Ticket.exists({ _id: req.params.ticketId }))) {
       return res.status(404).json({ error: 'Ticket not found.' });
     }
     return res.json(getNotes().filter((note) => note.ticketId === req.params.ticketId));
@@ -1033,11 +1143,11 @@ app.get('/api/notes/:ticketId', (req, res, next) => {
   }
 });
 
-app.post('/api/notes', upload.array('attachments', MAX_FILES_PER_NOTE), (req, res, next) => {
+app.post('/api/notes', upload.array('attachments', MAX_FILES_PER_NOTE), async (req, res, next) => {
   let savedAttachments = [];
   try {
     const { ticketId, text = '' } = req.body || {};
-    if (typeof ticketId !== 'string' || !ticketId.trim() || !getTickets().some((ticket) => ticket.id === ticketId)) {
+    if (typeof ticketId !== 'string' || !ticketId.trim() || !(await Ticket.exists({ _id: ticketId }))) {
       return res.status(400).json({ error: 'Select a valid ticket before adding a note.' });
     }
     if (typeof text !== 'string' || text.length > 10000) {
@@ -1172,6 +1282,14 @@ app.use((error, req, res, next) => {
   return res.status(status).json({ error: status >= 500 ? 'An internal server error occurred.' : error.message });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`SiyanoAV audit dashboard listening on 0.0.0.0:${PORT}`);
+async function startServer() {
+  await initializeMongo();
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`SiyanoAV audit dashboard listening on 0.0.0.0:${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error(`Unable to start the audit dashboard: ${error.message}`);
+  process.exitCode = 1;
 });

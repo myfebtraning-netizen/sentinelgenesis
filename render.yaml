@@ -12,5 +12,7 @@ services:
     envVars:
       - key: STORAGE_DIR
         value: /var/data
+      - key: MONGODB_URI
+        sync: false
       - key: NODE_VERSION
         value: "22"
