@@ -1,44 +1,56 @@
 [
   {
-    "id": "NOTE-01",
-    "ticketId": "TCK-01",
-    "content": "Verified real-time scanning behavior and checked exclusion paths.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T03:50:00.000Z"
+    "id": "d1f8a5b2-8d14-4be3-a7f2-70f356c2c901",
+    "ticketId": "Ticket01",
+    "text": "Root-Cause Hypothesis: RTP and manual scan may use different definition versions, archive handling, exclusions, or verdict normalization. The screenshots do not establish which path is responsible.\n\nExample Scenario to Validate: In an isolated VM, scan the same inert EICAR test file after a definition update: first on write via RTP, then on demand from the identical path and hash.\n\nExpected vs. Reported Behavior: Expected: both scan paths use the same definition generation and return a consistent detection/quarantine result. Reported: a sample was called clean in a manual scan while RTP reportedly detected it; reproduce before assigning root cause.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:33:00.000Z",
+    "updatedAt": "2026-10-08T07:33:00.000Z",
+    "author": "Admin"
   },
   {
-    "id": "NOTE-02",
-    "ticketId": "TCK-02",
-    "content": "Tested custom inbound firewall rule persistence across service reboots.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T04:01:00.000Z"
+    "id": "ec9f1274-60aa-4be9-98b5-44218a73d201",
+    "ticketId": "Ticket02",
+    "text": "Root-Cause Hypothesis: Protected-resource ACLs, service access controls, or kernel enforcement may be absent or insufficient for the tested account and installation state. Example Scenario to Validate: On a disposable, authorized test VM, attempt a rename and write to a signed product binary as a standard user and as an elevated administrator; capture the exact access result and product logs. Expected vs. Reported Behavior: Expected: unauthorized mutation is denied and audited while supported update/repair flows remain functional. Reported: AV files could reportedly be renamed or modified; the privilege level and exact file are not documented.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:35:00.000Z",
+    "updatedAt": "2026-10-08T07:35:00.000Z",
+    "author": "Admin"
   },
   {
-    "id": "NOTE-03",
-    "ticketId": "TCK-03",
-    "content": "Checked file permissions on quarantine directory storage volumes.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T04:11:00.000Z"
+    "id": "458a2f79-41c3-4d1a-81d9-b6cbfbb48f03",
+    "ticketId": "Ticket03",
+    "text": "Root-Cause Hypothesis: UI state may not reconcile with Windows Filtering Platform (WFP) policy, or the product rule may be scoped to the wrong app identity, profile, or network layer. Example Scenario to Validate: With a dedicated test rule, launch Brave on each Windows network profile, inspect the effective WFP filters and product rule log, then compare displayed status with OS firewall state. Expected vs. Reported Behavior: Expected: a saved application rule is installed at the intended WFP authorization layer and enforcement/status are observable. Reported: Brave remained reachable, automatic rules were missing, and status disagreed with Windows.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:39:00.000Z",
+    "updatedAt": "2026-10-08T07:39:00.000Z",
+    "author": "Admin"
   },
   {
-    "id": "NOTE-04",
-    "ticketId": "TCK-04",
-    "content": "Analyzed background scan timeout behavior with large nested archives.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T04:21:00.000Z"
+    "id": "d5b30e92-8e7c-4a0a-9a36-82ef1f370404",
+    "ticketId": "Ticket04",
+    "text": "Root-Cause Hypothesis: Category taxonomy, wildcard/apex matching, allow/deny precedence, or policy cache refresh may be inconsistent across browser, DNS, and encrypted traffic paths. Example Scenario to Validate: In a controlled test profile, classify a documented chat-domain test set, add one domain to the allowlist, apply the policy without reboot, and test apex plus subdomain variants over HTTPS. Expected vs. Reported Behavior: Expected: the chat category and explicit allowlist produce deterministic, documented precedence across supported traffic paths. Reported: WhatsApp categorization/allowlisting failed and a restricted chat site remained accessible.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:40:00.000Z",
+    "updatedAt": "2026-10-08T07:40:00.000Z",
+    "author": "Admin"
   },
   {
-    "id": "NOTE-05",
-    "ticketId": "TCK-05",
-    "content": "Verified SMTP connection strings and alert dispatcher error logs.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T04:31:00.000Z"
+    "id": "9d13c463-150b-4cea-a651-4323fcbf0505",
+    "ticketId": "Ticket05",
+    "text": "Root-Cause Hypothesis: Category feed coverage, refresh cadence, domain normalization, and keyword-rule scope may vary; the estimate is user-reported rather than a measured benchmark. Example Scenario to Validate: Build a dated, legally approved QA corpus with expected categories; test parent domains, subdomains, redirects, and a fresh taxonomy sync, recording false positives and false negatives. Expected vs. Reported Behavior: Expected: documented category coverage is versioned and repeatable, with block/allow outcomes matching the test corpus. Reported: only 20–40% coverage on a tested category, while explicit blacklist tests were positive.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:41:00.000Z",
+    "updatedAt": "2026-10-08T07:41:00.000Z",
+    "author": "Admin"
   },
   {
-    "id": "NOTE-06",
-    "ticketId": "TCK-06",
-    "content": "Tested token expiration thresholds during active administrative sessions.",
-    "author": "Admin",
-    "createdAt": "2026-10-08T04:41:00.000Z"
+    "id": "78ac2331-1db1-4e25-aef5-8fc627b00606",
+    "ticketId": "Ticket06",
+    "text": "Root-Cause Hypothesis: Selection state may be lost in bulk restore, quarantine metadata may not sync to exclusions, or UI/service calls may fail without isolated error handling. These are separate repro candidates. Example Scenario to Validate: Quarantine two harmless test files, restore only one, verify the other stays quarantined, then restart the UI and recheck exceptions. Separately exercise add-folder and delete flows with permission denial and interrupted service responses. Expected vs. Reported Behavior: Expected: only the selected item is restored, exception state persists, and failures surface without a crash. Reported: bulk restore, missing exception, add-folder crash, delete failure, and assessment mismatch require independent confirmation.",
+    "attachments": [],
+    "createdAt": "2026-10-08T07:42:00.000Z",
+    "updatedAt": "2026-10-08T07:42:00.000Z",
+    "author": "Admin"
   }
 ]

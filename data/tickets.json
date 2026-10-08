@@ -1,56 +1,62 @@
 [
   {
-    "id": "TCK-01",
-    "title": "Real-time Scanning / Advance Threat Shield",
-    "description": "Malware appearing clean in manual scans while Real-time Scanning differs.",
+    "id": "Ticket01",
+    "title": "Real-time Scanning / Advance Threat Shield (HIPS): scan disagreement and missed detection",
+    "description": "The tester reports malware appearing clean in manual scans while Real-time Scanning reportedly differs, plus a known-malware detection failure and concerns about synchronization with Advance Threat Shield / HIPS.",
     "status": "Open",
-    "severity": "High",
+    "severity": "HIGH",
+    "riskRating": "HIGH",
     "author": "Admin",
-    "createdAt": "2026-10-08T03:49:42.000Z"
+    "createdAt": "2026-10-08T07:33:00.000Z"
   },
   {
-    "id": "TCK-02",
-    "title": "Firewall Rule Synchronization Error",
-    "description": "Custom inbound blocking rules fail to persist after system reboot.",
+    "id": "Ticket02",
+    "title": "Advance Threat Shield / HIPS: self-protection gap",
+    "description": "The sender says SiyanoAV files can be renamed or modified, indicating a self-protection concern relevant to Advance Threat Shield / HIPS. The report does not identify the exact process, file, privilege level, or tested product module.",
     "status": "Open",
-    "severity": "Medium",
+    "severity": "HIGH",
+    "riskRating": "HIGH",
     "author": "Admin",
-    "createdAt": "2026-10-08T04:00:00.000Z"
+    "createdAt": "2026-10-08T07:35:00.000Z"
   },
   {
-    "id": "TCK-03",
-    "title": "Quarantine Folder Permission Denied",
-    "description": "System throws access errors when attempting to restore isolated items.",
+    "id": "Ticket03",
+    "title": "Privacy Firewall: enforcement and status discrepancies",
+    "description": "Reported Privacy Firewall concerns include inaccurate status, unsuccessful Brave blocking, and application rules not being added automatically. A Windows Firewall comparison is reported as working; reproduction and effective-rule inspection are still required.",
     "status": "Open",
-    "severity": "Low",
+    "severity": "HIGH",
+    "riskRating": "HIGH",
     "author": "Admin",
-    "createdAt": "2026-10-08T04:10:00.000Z"
+    "createdAt": "2026-10-08T07:39:00.000Z"
   },
   {
-    "id": "TCK-04",
-    "title": "Scheduled Full Scan Timeout",
-    "description": "Background scans freeze indefinitely when encountering large compressed archives.",
+    "id": "Ticket04",
+    "title": "Browser Safety / Parental Control: whitelist and chat-category failures",
+    "description": "Within the reported Browser Safety and Parental Control filtering experience, WhatsApp is reportedly treated as social media, whitelist tests fail, and a chat site remains reachable despite category filtering.",
     "status": "Open",
-    "severity": "High",
+    "severity": "HIGH",
+    "riskRating": "HIGH",
     "author": "Admin",
-    "createdAt": "2026-10-08T04:20:00.000Z"
+    "createdAt": "2026-10-08T07:40:00.000Z"
   },
   {
-    "id": "TCK-05",
-    "title": "Email Notification Delivery Failure",
-    "description": "Alert dispatchers fail to trigger SMTP authentication during critical events.",
+    "id": "Ticket05",
+    "title": "Browser Safety / Parental Control: incomplete web-category coverage",
+    "description": "The sender reports 20–40% coverage for a tested Parental Control web category and asks for broader lists and keyword blocking. Explicit blacklist tests are separately described as successful; the coverage estimate has not been independently measured.",
     "status": "Open",
-    "severity": "Medium",
+    "severity": "MEDIUM",
+    "riskRating": "MEDIUM",
     "author": "Admin",
-    "createdAt": "2026-10-08T04:30:00.000Z"
+    "createdAt": "2026-10-08T07:41:00.000Z"
   },
   {
-    "id": "TCK-06",
-    "title": "Dashboard Session Timeout Interval",
-    "description": "Admin tokens expire prematurely during extended diagnostic reviews.",
+    "id": "Ticket06",
+    "title": "File handling / File Shredder-related workflows: restore and assessment defects",
+    "description": "Reports cover quarantine restore scope, exception handling, Drive deletion, an add-folder crash, uninstall cleanup, and assessment-result mismatches. File Shredder is a related file-handling module to validate separately; no specific shredder defect is reported in the source pages.",
     "status": "Open",
-    "severity": "Low",
+    "severity": "MEDIUM",
+    "riskRating": "MEDIUM",
     "author": "Admin",
-    "createdAt": "2026-10-08T04:40:00.000Z"
+    "createdAt": "2026-10-08T07:42:00.000Z"
   }
 ]
