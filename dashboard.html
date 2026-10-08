@@ -306,6 +306,16 @@
     .selected-ticket-head .ticket-id { color: #7dd3fc; }
     .selected-ticket-copy { margin: 0; padding: 14px; color: #334155; background: #ffffff; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
     .selected-ticket-meta { display: flex; flex-wrap: wrap; gap: 7px 13px; padding: 10px 14px; border-top: 1px solid #e2e8f0; color: #475569; background: #f1f5f9; font-size: 10px; }
+    .ticket-workflow { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-top: 1px solid #e2e8f0; background: #ffffff; }
+    .workflow-field { display: grid; gap: 4px; color: #64748b; font-size: 10px; font-weight: 700; }
+    .workflow-field select { min-width: 120px; min-height: 34px; border-color: #cbd5e1; border-radius: 7px; padding: 6px 9px; color: #0f172a; background: #ffffff; font-size: 11px; }
+    .workflow-message { color: #64748b; font-size: 10px; }
+    .timeline-feed { display: grid; gap: 0; }
+    .timeline-event { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 9px; padding: 0 0 17px; }
+    .timeline-event:not(:last-child)::before { position: absolute; top: 25px; bottom: 0; left: 13px; width: 1px; background: #dbe3ed; content: ""; }
+    .timeline-badge { z-index: 1; display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #bfdbfe; border-radius: 50%; color: #1d4ed8; background: #eff6ff; font-size: 9px; font-weight: 800; }
+    .timeline-copy { min-width: 0; padding-top: 2px; color: #334155; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+    .timeline-date { display: block; margin-top: 3px; color: #64748b; font-size: 9px; }
     .note-form { gap: 10px; margin-bottom: 14px; padding: 12px; border: 1px solid #dbe3ed; border-radius: 8px; background: #f8fafc; }
     .note-form textarea { border-color: #cbd5e1; color: #0f172a; background: #ffffff; }
     .note-form textarea::placeholder { color: #94a3b8; }
@@ -501,6 +511,7 @@
               <label class="sr-only" for="severity-filter">Filter by severity</label>
               <select class="ticket-filter" id="severity-filter" aria-label="Filter by severity">
                 <option value="all">All Severities</option>
+                <option value="critical">Critical</option>
                 <option value="high">High</option>
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
@@ -541,6 +552,23 @@
               <span id="selected-ticket-author"></span>
               <span id="selected-ticket-date"></span>
             </div>
+            <form class="ticket-workflow" id="ticket-workflow-form">
+              <label class="workflow-field" for="workflow-status">Status
+                <select id="workflow-status" name="status">
+                  <option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option>
+                </select>
+              </label>
+              <label class="workflow-field" for="workflow-severity">Severity
+                <select id="workflow-severity" name="severity">
+                  <option value="">Not set</option><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option>
+                </select>
+              </label>
+              <label class="workflow-field" for="workflow-product">Product category
+                <select id="workflow-product" name="product"></select>
+              </label>
+              <button class="button primary small" id="save-workflow-button" type="submit">Save changes</button>
+              <span class="workflow-message" id="workflow-message" role="status" aria-live="polite"></span>
+            </form>
           </section>
           <section class="panel">
             <div class="panel-heading">
@@ -560,6 +588,12 @@
               <audio class="audio-preview" id="audio-preview" controls hidden></audio>
             </form>
             <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
+          </section>
+          <section class="panel" aria-labelledby="activity-timeline-title">
+            <div class="panel-heading">
+              <div><span class="panel-kicker">Ticket history</span><h3 id="activity-timeline-title">Audit Trail &amp; Activity Timeline</h3><p>Chronological record of workflow and ticket classification changes.</p></div>
+            </div>
+            <div class="timeline-feed" id="activity-timeline" aria-live="polite"><div class="empty">Choose a ticket to view its activity.</div></div>
           </section>
         </div>
       </div>
@@ -599,6 +633,7 @@
       <div class="dialog-head"><div><h3>Create a technical concern</h3><p>New tickets are assigned an ID, timestamp, author, and Open status.</p></div><button class="close" type="button" data-close="ticket-dialog" aria-label="Close dialog">×</button></div>
       <form class="ticket-form" id="ticket-form">
         <div class="field"><label for="ticket-product">Product Category</label><select id="ticket-product" name="product" required></select></div>
+        <div class="field"><label for="ticket-severity">Severity (optional)</label><select id="ticket-severity" name="severity"><option value="">Not set</option><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option></select></div>
         <div class="field"><label for="ticket-title">Title of Issue</label><input id="ticket-title" name="title" maxlength="200" required placeholder="Summarize the technical concern"></div>
         <div class="field"><label for="ticket-description">Description</label><textarea id="ticket-description" name="description" maxlength="10000" required placeholder="Describe the observed behavior, impact, and context…"></textarea></div>
         <div class="field"><label for="ticket-tags">Tags (comma-separated, optional)</label><input id="ticket-tags" name="tags" maxlength="400" placeholder="e.g. HIPS, Malware, RealTimeScan"></div>
@@ -725,9 +760,12 @@
       filter.replaceChildren(new Option('All Products', 'all'));
       const category = document.getElementById('ticket-product');
       category.replaceChildren();
+      const workflowCategory = document.getElementById('workflow-product');
+      workflowCategory.replaceChildren();
       for (const product of supportedProducts) {
         filter.add(new Option(product, product));
         category.add(new Option(product, product));
+        workflowCategory.add(new Option(product, product));
       }
       selectedProduct = supportedProducts.includes(filterValue) ? filterValue : 'all';
       filter.value = selectedProduct;
@@ -913,6 +951,7 @@
     .metric.open { border-top-color: #dc2626; }
     .metric.resolved { border-top-color: #16a34a; }
     .metric.high { border-top-color: #ea580c; }
+    .metric.critical { border-top-color: #dc2626; }
     .metric.medium { border-top-color: #d97706; }
     .metric.low { border-top-color: #16a34a; }
     .metric-label { display: block; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
@@ -1012,6 +1051,7 @@
       ${metric('Open Concerns', summary.open)}
       ${metric('Resolved Concerns', summary.resolved, 'resolved')}
       ${metric('Closed Concerns', summary.closed)}
+      ${metric('Critical Severity', summary.critical, 'critical')}
       ${metric('High Severity', summary.high, 'high')}
       ${metric('Medium Severity', summary.medium, 'medium')}
       ${metric('Low Severity', summary.low, 'low')}
@@ -1459,10 +1499,11 @@
         status.className = 'status-tag';
         status.textContent = ticket.status || 'Open';
         badges.append(status);
-        if (ticket.riskRating) {
+        const severity = ticket.severity || ticket.riskRating;
+        if (severity) {
           const risk = document.createElement('span');
-          risk.className = `risk-tag risk-${ticket.riskRating.toLowerCase()}`;
-          risk.textContent = ticket.riskRating;
+          risk.className = `risk-tag risk-${severity.toLowerCase()}`;
+          risk.textContent = severity;
           badges.append(risk);
         }
         head.append(titleGroup, badges);
@@ -1526,6 +1567,7 @@
       const details = document.getElementById('selected-ticket-details');
       if (!ticket) {
         details.hidden = true;
+        renderAuditTimeline(null);
         return;
       }
       details.hidden = false;
@@ -1533,13 +1575,67 @@
       document.getElementById('selected-ticket-title').textContent = ticket.title;
       document.getElementById('selected-ticket-status').textContent = ticket.status || 'Open';
       const risk = document.getElementById('selected-ticket-risk');
-      risk.hidden = !ticket.riskRating;
-      risk.textContent = ticket.riskRating || '';
-      risk.className = ticket.riskRating ? `risk-tag risk-${ticket.riskRating.toLowerCase()}` : 'risk-tag';
+      const severity = ticket.severity || ticket.riskRating || '';
+      risk.hidden = !severity;
+      risk.textContent = severity;
+      risk.className = severity ? `risk-tag risk-${severity.toLowerCase()}` : 'risk-tag';
       document.getElementById('selected-ticket-description').textContent = ticket.description;
       document.getElementById('selected-ticket-product').textContent = `Product: ${ticket.product}`;
       document.getElementById('selected-ticket-author').textContent = `Reported by ${ticket.author || 'Unknown author'}`;
       document.getElementById('selected-ticket-date').textContent = `Created ${new Date(ticket.createdAt).toLocaleString()}`;
+      document.getElementById('workflow-status').value = ticket.status || 'Open';
+      document.getElementById('workflow-severity').value = severity.toUpperCase();
+      document.getElementById('workflow-product').value = ticket.product;
+      document.getElementById('workflow-message').textContent = '';
+      renderAuditTimeline(ticket);
+    }
+
+    function renderAuditTimeline(ticket) {
+      const timeline = document.getElementById('activity-timeline');
+      timeline.replaceChildren();
+      const events = Array.isArray(ticket?.activityLog) ? [...ticket.activityLog] : [];
+      if (!events.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = ticket ? 'No workflow activity has been recorded.' : 'Choose a ticket to view its activity.';
+        timeline.append(empty);
+        return;
+      }
+
+      events.sort((first, second) => Date.parse(first.timestamp) - Date.parse(second.timestamp));
+      for (const event of events) {
+        const eventRow = document.createElement('article');
+        eventRow.className = 'timeline-event';
+        const badge = document.createElement('span');
+        badge.className = 'timeline-badge';
+        const copy = document.createElement('div');
+        copy.className = 'timeline-copy';
+        const description = document.createElement('div');
+        const date = document.createElement('time');
+        date.className = 'timeline-date';
+        date.dateTime = event.timestamp;
+        date.textContent = new Date(event.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        let field;
+        if (event.action === 'status_changed') {
+          field = 'Status';
+          badge.textContent = 'S';
+        } else if (event.action === 'severity_changed') {
+          field = 'Severity';
+          badge.textContent = 'V';
+        } else {
+          field = 'Product category';
+          badge.textContent = 'P';
+        }
+        const transition = event.statusTo === null
+          ? `cleared (was ${event.statusFrom})`
+          : event.statusFrom
+            ? `changed from ${event.statusFrom} to ${event.statusTo}`
+            : `set to ${event.statusTo}`;
+        description.textContent = `${field} ${transition} by ${event.performedBy || 'Unknown user'}`;
+        copy.append(description, date);
+        eventRow.append(badge, copy);
+        timeline.append(eventRow);
+      }
     }
 
     async function selectTicket(ticketId) {
@@ -1820,6 +1916,7 @@
             title: data.get('title'),
             description: data.get('description'),
             product: data.get('product'),
+            severity: data.get('severity') || null,
             tags: String(data.get('tags') || '').split(',').map((tag) => tag.trim()).filter(Boolean),
           }),
         });
@@ -1837,6 +1934,52 @@
         if (currentTicketId) await selectTicket(ticket.id);
         showToast(`${ticket.id} created.`);
       } catch (error) { showToast(error.message, true); }
+    });
+
+    document.getElementById('ticket-workflow-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const ticketId = currentTicketId;
+      if (!ticketId) return;
+      const button = document.getElementById('save-workflow-button');
+      const message = document.getElementById('workflow-message');
+      button.disabled = true;
+      message.textContent = '';
+      try {
+        const updatedTicket = await api(`/api/tickets/${encodeURIComponent(ticketId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: document.getElementById('workflow-status').value,
+            severity: document.getElementById('workflow-severity').value || null,
+            product: document.getElementById('workflow-product').value,
+          }),
+        });
+        const ticketIndex = tickets.findIndex((ticket) => ticket.id === ticketId);
+        if (ticketIndex !== -1) tickets[ticketIndex] = updatedTicket;
+        if (selectedStatus !== 'all' && selectedStatus !== updatedTicket.status.toLocaleLowerCase()) {
+          selectedStatus = 'all';
+          document.getElementById('status-filter').value = 'all';
+        }
+        const updatedSeverity = (updatedTicket.severity || updatedTicket.riskRating || '').toLocaleLowerCase();
+        if (selectedSeverity !== 'all' && selectedSeverity !== updatedSeverity) {
+          selectedSeverity = 'all';
+          document.getElementById('severity-filter').value = 'all';
+        }
+        if (selectedProduct !== 'all' && selectedProduct !== updatedTicket.product) {
+          selectedProduct = updatedTicket.product;
+          document.getElementById('product-filter').value = selectedProduct;
+        }
+        renderTagFilters();
+        renderTickets();
+        if (currentTicketId === ticketId) renderSelectedTicket(updatedTicket);
+        message.textContent = 'Workflow changes saved.';
+        showToast('Ticket workflow updated.');
+      } catch (error) {
+        message.textContent = error.message;
+        showToast(error.message, true);
+      } finally {
+        button.disabled = false;
+      }
     });
 
     document.getElementById('new-ticket-button').addEventListener('click', () => {

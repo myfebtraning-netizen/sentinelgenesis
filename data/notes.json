@@ -43,21 +43,5 @@
     "createdAt": "2026-10-08T07:42:00.000Z",
     "updatedAt": "2026-10-08T07:42:00.000Z",
     "author": "Admin"
-  },
-  {
-    "id": "6708f821-c813-400c-94ee-963c57becfc0",
-    "ticketId": "Ticket03",
-    "text": "",
-    "attachments": [
-      {
-        "fileName": "230f2f27-3fb4-4038-aaad-c190ba840c28.pdf",
-        "name": "SPECIMEN.pdf",
-        "mimeType": "application/pdf",
-        "size": 357509
-      }
-    ],
-    "createdAt": "2026-10-08T08:42:46.224Z",
-    "updatedAt": "2026-10-08T08:42:46.224Z",
-    "author": "Admin"
   }
 ]

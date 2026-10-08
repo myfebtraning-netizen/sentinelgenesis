@@ -18,6 +18,8 @@ const MASTER_PASSWORD = 'cat123123';
 const DEFAULT_USERNAME = 'Admin';
 const DEFAULT_PASSWORD = 'admin@123#';
 const DEFAULT_PRODUCT = 'SiyanoAV Total Security';
+const TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed'];
+const TICKET_SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const SUPPORTED_PRODUCTS = [
   DEFAULT_PRODUCT,
   'Mobile Security',
@@ -122,6 +124,51 @@ function normalizeTicketProducts(tickets) {
   return { tickets: normalizedTickets, changed };
 }
 
+function normalizeTicketActivityLogs(tickets) {
+  let changed = false;
+  const normalizedTickets = tickets.map((ticket) => {
+    if (ticket.activityLog === undefined) {
+      changed = true;
+      return { ...ticket, activityLog: [] };
+    }
+    if (!Array.isArray(ticket.activityLog)) {
+      const error = new Error('Ticket activity logs must contain arrays.');
+      error.status = 400;
+      throw error;
+    }
+    for (const event of ticket.activityLog) {
+      if (!event || typeof event !== 'object' || Array.isArray(event)
+        || !['status_changed', 'severity_changed', 'product_changed'].includes(event.action)
+        || (event.statusFrom !== null && typeof event.statusFrom !== 'string')
+        || (event.statusTo !== null && typeof event.statusTo !== 'string')
+        || typeof event.performedBy !== 'string' || !event.performedBy.trim()
+        || typeof event.timestamp !== 'string' || !Number.isFinite(Date.parse(event.timestamp))) {
+        const error = new Error('Ticket activity log contains an invalid event.');
+        error.status = 400;
+        throw error;
+      }
+    }
+    return ticket;
+  });
+  return { tickets: normalizedTickets, changed };
+}
+
+function appendTicketActivity(ticket, action, statusFrom, statusTo, performedBy, timestamp) {
+  if (!Array.isArray(ticket.activityLog)) ticket.activityLog = [];
+  ticket.activityLog.push({ action, statusFrom, statusTo, performedBy, timestamp });
+}
+
+function canonicalTicketStatus(value) {
+  if (typeof value !== 'string') return null;
+  return TICKET_STATUSES.find((status) => normalizedTicketStatus(status) === normalizedTicketStatus(value)) || null;
+}
+
+function canonicalTicketSeverity(value) {
+  if (typeof value !== 'string') return null;
+  const severity = value.trim().toLocaleUpperCase();
+  return TICKET_SEVERITIES.includes(severity) ? severity : null;
+}
+
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return {
     salt,
@@ -218,8 +265,11 @@ if (!Array.isArray(initialTickets) || !Array.isArray(initialNotes)) {
   throw new Error('Tickets and notes storage must contain JSON arrays.');
 }
 const normalizedInitialTickets = normalizeTicketProducts(initialTickets);
-initialTickets = normalizedInitialTickets.tickets;
-if (normalizedInitialTickets.changed) atomicWriteJson(files.tickets, initialTickets);
+const normalizedInitialActivityLogs = normalizeTicketActivityLogs(normalizedInitialTickets.tickets);
+initialTickets = normalizedInitialActivityLogs.tickets;
+if (normalizedInitialTickets.changed || normalizedInitialActivityLogs.changed) {
+  atomicWriteJson(files.tickets, initialTickets);
+}
 
 const storedUsers = readJson(files.users, []);
 let users = Array.isArray(storedUsers) ? storedUsers : [];
@@ -503,7 +553,8 @@ function parseBackupArchive(archivePath) {
     error.status = 400;
     throw error;
   }
-  const normalizedTickets = normalizeTicketProducts(tickets);
+  const normalizedProducts = normalizeTicketProducts(tickets);
+  const normalizedTickets = normalizeTicketActivityLogs(normalizedProducts.tickets);
   const ticketIds = new Set();
   for (const ticket of normalizedTickets.tickets) {
     if (!ticket || typeof ticket !== 'object' || Array.isArray(ticket)
@@ -779,7 +830,7 @@ app.get('/api/reports/summary', (req, res, next) => {
     }
 
     const statusCounts = { open: 0, inProgress: 0, resolved: 0, closed: 0 };
-    const severityCounts = { high: 0, medium: 0, low: 0 };
+    const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
     for (const ticket of tickets) {
       const status = normalizedTicketStatus(ticket.status || 'Open');
       if (status === 'open') statusCounts.open += 1;
@@ -811,7 +862,13 @@ app.get('/api/reports/summary', (req, res, next) => {
 
 app.post('/api/tickets', (req, res, next) => {
   try {
-    const { title, description, product = DEFAULT_PRODUCT, tags = [] } = req.body || {};
+    const {
+      title,
+      description,
+      product = DEFAULT_PRODUCT,
+      severity,
+      tags = [],
+    } = req.body || {};
     if (typeof title !== 'string' || !title.trim() || title.length > 200) {
       return res.status(400).json({ error: 'Title of Issue is required and must be at most 200 characters.' });
     }
@@ -820,6 +877,12 @@ app.post('/api/tickets', (req, res, next) => {
     }
     if (typeof product !== 'string' || !SUPPORTED_PRODUCTS.includes(product)) {
       return res.status(400).json({ error: 'Select a supported product category.' });
+    }
+    const normalizedSeverity = severity === undefined || severity === null || severity === ''
+      ? null
+      : canonicalTicketSeverity(severity);
+    if (severity !== undefined && severity !== null && severity !== '' && !normalizedSeverity) {
+      return res.status(400).json({ error: 'Select a supported ticket severity.' });
     }
     if (!Array.isArray(tags) || tags.length > 12 || tags.some((tag) => (
       typeof tag !== 'string'
@@ -839,6 +902,7 @@ app.post('/api/tickets', (req, res, next) => {
       return normalized;
     }, []);
     const tickets = getTickets();
+    const createdAt = new Date().toISOString();
     const ticket = {
       id: createTicketId(tickets),
       product,
@@ -846,12 +910,81 @@ app.post('/api/tickets', (req, res, next) => {
       description: description.trim(),
       tags: normalizedTags,
       status: 'Open',
-      createdAt: new Date().toISOString(),
+      ...(normalizedSeverity ? { severity: normalizedSeverity, riskRating: normalizedSeverity } : {}),
+      createdAt,
       author: req.user.username,
+      activityLog: [],
     };
+    appendTicketActivity(ticket, 'status_changed', null, ticket.status, req.user.username, createdAt);
+    appendTicketActivity(ticket, 'product_changed', null, ticket.product, req.user.username, createdAt);
+    if (normalizedSeverity) {
+      appendTicketActivity(ticket, 'severity_changed', null, normalizedSeverity, req.user.username, createdAt);
+    }
     tickets.push(ticket);
     atomicWriteJson(files.tickets, tickets);
     return res.status(201).json(ticket);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch('/api/tickets/:id', (req, res, next) => {
+  try {
+    const updates = req.body;
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Provide ticket fields to update.' });
+    }
+    const allowedFields = new Set(['status', 'severity', 'product']);
+    const fields = Object.keys(updates);
+    if (!fields.length || fields.some((field) => !allowedFields.has(field))) {
+      return res.status(400).json({ error: 'Only status, severity, and product category can be updated.' });
+    }
+    const tickets = getTickets();
+    const ticket = tickets.find((candidate) => candidate.id === req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+
+    const timestamp = new Date().toISOString();
+    if (Object.hasOwn(updates, 'status')) {
+      const nextStatus = canonicalTicketStatus(updates.status);
+      if (!nextStatus) {
+        return res.status(400).json({ error: `Status must be one of: ${TICKET_STATUSES.join(', ')}.` });
+      }
+      const currentStatus = ticket.status || 'Open';
+      if (normalizedTicketStatus(currentStatus) !== normalizedTicketStatus(nextStatus)) {
+        appendTicketActivity(ticket, 'status_changed', currentStatus, nextStatus, req.user.username, timestamp);
+        ticket.status = nextStatus;
+      }
+    }
+    if (Object.hasOwn(updates, 'severity')) {
+      const nextSeverity = updates.severity === null || updates.severity === ''
+        ? null
+        : canonicalTicketSeverity(updates.severity);
+      if (updates.severity !== null && updates.severity !== '' && !nextSeverity) {
+        return res.status(400).json({ error: `Severity must be one of: ${TICKET_SEVERITIES.join(', ')}.` });
+      }
+      const currentSeverity = ticket.severity || ticket.riskRating || null;
+      if (currentSeverity !== nextSeverity) {
+        appendTicketActivity(ticket, 'severity_changed', currentSeverity, nextSeverity, req.user.username, timestamp);
+        if (nextSeverity) {
+          ticket.severity = nextSeverity;
+          ticket.riskRating = nextSeverity;
+        } else {
+          delete ticket.severity;
+          delete ticket.riskRating;
+        }
+      }
+    }
+    if (Object.hasOwn(updates, 'product')) {
+      if (typeof updates.product !== 'string' || !SUPPORTED_PRODUCTS.includes(updates.product)) {
+        return res.status(400).json({ error: 'Select a supported product category.' });
+      }
+      if (ticket.product !== updates.product) {
+        appendTicketActivity(ticket, 'product_changed', ticket.product || null, updates.product, req.user.username, timestamp);
+        ticket.product = updates.product;
+      }
+    }
+    atomicWriteJson(files.tickets, tickets);
+    return res.json(ticket);
   } catch (error) {
     return next(error);
   }

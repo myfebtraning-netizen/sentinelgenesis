@@ -6,22 +6,39 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
-    "tags": ["HIPS", "Malware", "RealTimeScan"],
+    "tags": [
+      "HIPS",
+      "Malware",
+      "RealTimeScan"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:33:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": []
   },
   {
     "id": "Ticket02",
     "title": "Advance Threat Shield / HIPS: self-protection gap",
     "description": "The sender says SiyanoAV files can be renamed or modified, indicating a self-protection concern relevant to Advance Threat Shield / HIPS. The report does not identify the exact process, file, privilege level, or tested product module.",
-    "status": "Open",
+    "status": "In Progress",
     "severity": "HIGH",
     "riskRating": "HIGH",
-    "tags": ["HIPS", "SelfProtection"],
+    "tags": [
+      "HIPS",
+      "SelfProtection"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:35:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": [
+      {
+        "action": "status_changed",
+        "statusFrom": "Open",
+        "statusTo": "In Progress",
+        "performedBy": "Sanjay",
+        "timestamp": "2026-10-08T15:40:09.295Z"
+      }
+    ]
   },
   {
     "id": "Ticket03",
@@ -30,10 +47,14 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
-    "tags": ["Firewall", "Network"],
+    "tags": [
+      "Firewall",
+      "Network"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:39:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": []
   },
   {
     "id": "Ticket04",
@@ -42,10 +63,15 @@
     "status": "Open",
     "severity": "HIGH",
     "riskRating": "HIGH",
-    "tags": ["ParentalControl", "BrowserSafety", "Whitelist"],
+    "tags": [
+      "ParentalControl",
+      "BrowserSafety",
+      "Whitelist"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:40:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": []
   },
   {
     "id": "Ticket05",
@@ -54,10 +80,15 @@
     "status": "Open",
     "severity": "MEDIUM",
     "riskRating": "MEDIUM",
-    "tags": ["ParentalControl", "BrowserSafety", "WebFiltering"],
+    "tags": [
+      "ParentalControl",
+      "BrowserSafety",
+      "WebFiltering"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:41:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": []
   },
   {
     "id": "Ticket06",
@@ -66,9 +97,13 @@
     "status": "Open",
     "severity": "MEDIUM",
     "riskRating": "MEDIUM",
-    "tags": ["FileHandling", "Quarantine"],
+    "tags": [
+      "FileHandling",
+      "Quarantine"
+    ],
     "author": "Admin",
     "createdAt": "2026-10-08T07:42:00.000Z",
-    "product": "SiyanoAV Total Security"
+    "product": "SiyanoAV Total Security",
+    "activityLog": []
   }
 ]
