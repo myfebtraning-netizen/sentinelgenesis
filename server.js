@@ -15,7 +15,7 @@ const PUBLIC_UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const PUBLIC_IMAGE_DIR = path.join(PUBLIC_DIR, 'images');
 const STORAGE_DIR = process.env.STORAGE_DIR ? path.resolve(process.env.STORAGE_DIR) : DATA_DIR;
 const UPLOAD_DIR = process.env.STORAGE_DIR ? path.join(STORAGE_DIR, 'uploads') : PUBLIC_UPLOAD_DIR;
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sentinel';
 const MASTER_PASSWORD = 'cat123123';
 const DEFAULT_USERNAME = 'Admin';
 const DEFAULT_PASSWORD = 'admin@123#';
@@ -331,9 +331,6 @@ async function getTickets() {
 }
 
 async function initializeMongo() {
-  if (!MONGODB_URI) {
-    throw new Error('MONGODB_URI must be configured with the MongoDB Atlas connection string.');
-  }
   await mongoose.connect(MONGODB_URI);
   try {
     await Ticket.createCollection();
@@ -1282,14 +1279,13 @@ app.use((error, req, res, next) => {
   return res.status(status).json({ error: status >= 500 ? 'An internal server error occurred.' : error.message });
 });
 
-async function startServer() {
-  await initializeMongo();
+function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`SiyanoAV audit dashboard listening on 0.0.0.0:${PORT}`);
   });
+  initializeMongo().catch((error) => {
+    console.error(`Unable to connect to MongoDB at startup: ${error.message}`);
+  });
 }
 
-startServer().catch((error) => {
-  console.error(`Unable to start the audit dashboard: ${error.message}`);
-  process.exitCode = 1;
-});
+startServer();
