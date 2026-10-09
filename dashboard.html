@@ -130,7 +130,6 @@
     .ticket-checkbox { flex: 0 0 auto; width: 15px; height: 15px; margin: 3px 0 0; accent-color: #0284c7; cursor: pointer; }
     .ticket-card-select-row { min-width: 0; min-height: 0; flex: 1 1 auto; }
     .ticket-card-select-row .ticket-select { min-width: 0; flex: 1 1 auto; }
-    .bulk-select-all { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
     .bulk-action-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px; border: 1px solid rgba(56,189,248,.2); border-radius: 9px; background: rgba(2,132,199,.07); }
     .bulk-action-bar[hidden] { display: none; }
     .bulk-selection-count { margin-right: auto; color: var(--muted); font-size: 10px; font-weight: 750; }
@@ -295,7 +294,7 @@
     .metric strong { display: block; margin-top: 2px; color: #0f172a; font-size: 23px; letter-spacing: -.04em; }
     .metric-icon { width: 32px; height: 32px; border: 1px solid #dbeafe; border-radius: 8px; background: #eff6ff; color: #2563eb; }
     .dashboard-grid { grid-template-columns: minmax(255px, .78fr) minmax(0, 1.6fr); gap: 16px; align-items: stretch; }
-    .dashboard-filter-bar { border-color: #dbe3ed; border-radius: 9px; padding: 12px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); }
+    .dashboard-filter-bar { margin-bottom: 0; border-color: #dbe3ed; border-radius: 9px; padding: 12px; background: #ffffff; box-shadow: 0 4px 16px rgba(15,23,42,.055); }
     .tag-filter-disclosure { border-color: #e2e8f0; }
     .tag-filter-disclosure summary { color: #64748b; }
     .panel { min-width: 0; border-radius: 8px; padding: 17px; box-shadow: 0 4px 12px rgba(15,23,42,.09); transition: border-color .18s, box-shadow .18s; }
@@ -347,14 +346,9 @@
     .risk-low { border-color: #bbf7d0; color: #15803d; background: #f0fdf4; }
     .note-delete:hover { background: #fee2e2; }
     .bulk-action-bar { border-color: #bfdbfe; background: #eff6ff; }
-    .bulk-selection-count, .bulk-select-all { color: #475569; }
+    .bulk-selection-count { color: #475569; }
     .active-ticket { color: #2563eb !important; }
-    .ticket-sidebar { display: grid; min-width: 0; grid-template-rows: auto 130px auto; gap: 14px; align-content: stretch; }
-    .ticket-sidebar > .panel-heading { align-items: center; gap: 8px; margin: 0; }
-    .ticket-sidebar > .panel-heading > div { display: flex; min-width: 0; align-items: baseline; gap: 7px; }
-    .ticket-sidebar > .panel-heading .panel-kicker { flex: 0 0 auto; font-size: 8px; }
-    .ticket-sidebar > .panel-heading h3 { font-size: 13px; white-space: nowrap; }
-    .ticket-sidebar > .panel-heading .bulk-select-all { flex: 0 0 auto; }
+    .ticket-sidebar { display: grid; min-width: 0; grid-template-rows: 130px auto; gap: 14px; align-content: stretch; padding-top: 0; }
     .workspace-right { display: flex; min-width: 0; }
     .workspace-right > .evidence-panel { display: flex; min-width: 0; min-height: 100%; flex: 1 1 auto; flex-direction: column; }
     .workspace-right > .evidence-panel .notes-feed { min-height: 0; max-height: 680px; flex: 1 1 auto; overflow-y: auto; }
@@ -438,7 +432,7 @@
       .dashboard-filter-controls .ticket-search { flex-basis: 100%; }
       .dashboard-filter-controls .ticket-filter, .dashboard-filter-controls .product-filter { flex: 1 1 130px; }
       .dashboard-filter-controls .ticket-sort { flex: 1 1 100%; }
-      .ticket-sidebar { grid-template-rows: auto 130px auto; }
+      .ticket-sidebar { grid-template-rows: 130px auto; }
       .workspace-right > .evidence-panel .notes-feed { max-height: 450px; }
       .metrics { gap: 7px; margin-bottom: 16px; }
       .toolbar .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 0; }
@@ -627,10 +621,6 @@
       </section>
       <div class="dashboard-grid">
         <aside class="panel ticket-sidebar">
-          <div class="panel-heading">
-            <div><span class="panel-kicker">Issue register /</span><h3>Tracked Tickets</h3></div>
-            <label class="bulk-select-all"><input class="ticket-checkbox" id="select-all-tickets" type="checkbox" aria-label="Select all visible tickets"> Select All</label>
-          </div>
           <div class="ticket-list" id="ticket-list"><div class="empty">Loading concerns…</div></div>
           <section class="selected-ticket" id="selected-ticket-details" aria-label="Selected ticket details" hidden>
             <div class="selected-ticket-head">
@@ -1543,16 +1533,11 @@
       );
     }
 
-    function updateBulkActionControls(visibleTicketIds) {
+    function updateBulkActionControls() {
       const bulkActionBar = document.getElementById('bulk-action-bar');
-      const selectAll = document.getElementById('select-all-tickets');
-      const selectedVisibleCount = visibleTicketIds.filter((ticketId) => selectedTicketIds.has(ticketId)).length;
       bulkActionBar.hidden = selectedTicketIds.size === 0;
       document.getElementById('bulk-selection-count').textContent =
         `${selectedTicketIds.size} selected`;
-      selectAll.disabled = visibleTicketIds.length === 0;
-      selectAll.checked = visibleTicketIds.length > 0 && selectedVisibleCount === visibleTicketIds.length;
-      selectAll.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleTicketIds.length;
     }
 
     async function applyBulkUpdate(field, value) {
@@ -1615,14 +1600,6 @@
       renderTickets();
     });
     document.getElementById('reset-ticket-filters').addEventListener('click', resetTicketFilters);
-    document.getElementById('select-all-tickets').addEventListener('change', (event) => {
-      const visibleTicketIds = getFilteredTickets().map((ticket) => ticket.id);
-      for (const ticketId of visibleTicketIds) {
-        if (event.currentTarget.checked) selectedTicketIds.add(ticketId);
-        else selectedTicketIds.delete(ticketId);
-      }
-      renderTickets();
-    });
     document.getElementById('apply-bulk-status').addEventListener('click', () => {
       applyBulkUpdate('status', document.getElementById('bulk-status').value);
     });
@@ -1660,7 +1637,7 @@
       }
       ticketList.replaceChildren();
       if (!productTickets.length) {
-        updateBulkActionControls([]);
+        updateBulkActionControls();
         ticketList.innerHTML = tickets.length
           ? (hasActiveTicketFilters()
             ? '<div class="empty">No tickets match your filter criteria.</div>'
@@ -1702,7 +1679,7 @@
       ticketSort.setAttribute('aria-pressed', String(!sortAscending));
       const matchingTickets = displayedTickets.filter(({ ticket }) => ticketMatchesFilters(ticket));
       if (!matchingTickets.length) {
-        updateBulkActionControls([]);
+        updateBulkActionControls();
         ticketList.innerHTML = hasActiveTicketFilters()
           ? '<div class="empty">No tickets match your filter criteria.</div>'
           : '<div class="empty">No concerns have been logged. Create a ticket to begin the audit.</div>';
@@ -1714,7 +1691,7 @@
         }
         return;
       }
-      updateBulkActionControls(matchingTickets.map(({ ticket }) => ticket.id));
+      updateBulkActionControls();
       if (currentTicketId && !matchingTickets.some(({ ticket }) => ticket.id === currentTicketId)) {
         currentTicketId = null;
         renderSelectedTicket(null);

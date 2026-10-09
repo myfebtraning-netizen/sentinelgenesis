@@ -43,5 +43,201 @@
     "createdAt": "2026-10-08T07:42:00.000Z",
     "updatedAt": "2026-10-08T07:42:00.000Z",
     "author": "Admin"
+  },
+  {
+    "id": "4aa169a9-d26b-4439-8660-7c06b0b2372e",
+    "ticketId": "Ticket01",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "44c2f559-d136-48ed-abdc-7ecd81acb824.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 539083
+      },
+      {
+        "fileName": "ae1db395-bb6d-4f58-a0cf-ca203242e9f2.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 214804
+      }
+    ],
+    "createdAt": "2026-10-09T10:46:48.016Z",
+    "updatedAt": "2026-10-09T10:46:48.016Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "8c99366d-9e8e-4439-9c21-afe3061ce6de",
+    "ticketId": "Ticket01",
+    "text": "Title: Desynchronization Between Real-Time and Manual Scan Detection\r\n\r\nSeverity: Critical\r\nPriority: High\r\nComponent: Antivirus Engine / Scan Coordinator\r\n\r\nSummary:\r\nSiyanoAV exhibits conflicting detection results for the same malware sample depending on the scan method used. Real-time protection successfully identifies the threat, but the manual scan engine completely misses it. This strongly indicates that the two engines are operating with disparate definitions, heuristics, or database access.\r\n\r\nSteps to Reproduce:\r\n\r\nVerify that SiyanoAV Real-Time Protection is Active.\r\n\r\nNavigate to a folder containing a known malware sample (e.g., hacktool.keylogger/msil).\r\n\r\nObserve that Real-Time Protection blocks/quarantines the file (Confirm using visual evidence, e.g., image_0.png).\r\n\r\nDisable Real-Time Protection.\r\n\r\nRestore the infected file (if necessary/possible for testing).\r\n\r\nInitiate a manual 'Virus Scanning' or 'Quick Scan' on that specific file or its parent folder.\r\n\r\nObserve the final scan results.\r\n\r\nExpected Result:\r\nThe manual scan should detect the exact same threat that the real-time protection identified.\r\n\r\nActual Result:\r\nThe manual scan completes successfully but reports \"Threats Detected: 0\" (Confirm using visual evidence, e.g., image_1.png). The infected file remains undetection.\r\n\r\nEvidence:\r\n\r\nAttached: image_2.png (Visual Report overlaying conflicting results and demonstrating engine desynchronization).\r\n\r\nProposed Solution:\r\nThe development team must enforce synchronization across all scanning modules. The software should utilize a centralized intelligence coordinator that ensures real-time and manual/on-demand scanning engines access the identical, most up-to-date virus definition database and utilize the same heuristic rules.",
+    "attachments": [
+      {
+        "fileName": "4ef8d88e-838e-4b11-9261-e5b7b8e623ce.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 1030110
+      }
+    ],
+    "createdAt": "2026-10-09T10:47:31.348Z",
+    "updatedAt": "2026-10-09T10:47:31.348Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "5c1111f5-0f84-4839-a14e-9458f8e40fdf",
+    "ticketId": "Ticket02",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "7235d2f5-4b64-40fd-81f1-5d8d619da143.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 562851
+      },
+      {
+        "fileName": "18ccf6b5-7d0d-4422-9bf0-e1a1ab414bf4.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 9496
+      }
+    ],
+    "createdAt": "2026-10-09T10:48:27.402Z",
+    "updatedAt": "2026-10-09T10:48:27.402Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "a3fdcd7d-056f-438e-a730-2821d584739d",
+    "ticketId": "Ticket02",
+    "text": "Subject: CRITICAL SECURITY BREACH: Complete Lack of AV Self-Protection (Anti-Tamper)\r\n\r\nPriority: Critical\r\nComponent: Antivirus Core / System Driver\r\n\r\nSummary:\r\nDuring a routine security audit, a fundamental architectural flaw was identified: SiyanoAV provides zero self-protection. The application's UI lacks a mechanism to enable/disable self-protection, and consequently, critical system files, registry keys, and running processes are completely vulnerable to tamper. Targeted malware can disable SiyanoAV by simply renaming its main executable, modifying core DLLs, or deleting its service, effectively crippling the protection suite before it can neutralize the threat.\r\n\r\nVulnerability Description:\r\nSelf-Protection is an industry-standard security measure for antivirus software. It prevents malware (or malicious users) from:\r\n\r\nTerminating Running Processes: Stopping SiyanoAV Total Security.exe, services, or driver threads.\r\n\r\nFile Tampering: Deleting or renaming core components in C:\\Program Files (x86)\\Siyano Labs Pvt. Ltd\\.\r\n\r\nRegistry Tampering: Deleting or modifying auto-start registry keys (HKLM or HKCU) that ensure the AV loads on boot.\r\n\r\nEvidence:\r\n\r\nMissing UI Mechanism: The current 'General Settings' panel (image_3.png) contains no toggle or configuration for 'Self-Protection' or 'Anti-Tamper'.\r\n\r\nVulnerability Mapping: The attached image (image_5.png) visually maps how the missing UI corresponds to immediate system vulnerabilities. It illustrates how an attacker can simulate renaming core files (like SiyanoAV Total Security.exe or BouncyCastle.Crypto.dll) to defeat the software's ability to protect itself.\r\n\r\nSteps to Reproduce (Simulation):\r\n\r\nVerify that SiyanoAV is fully updated and 'Realtime' protection is Active.\r\n\r\nOpen Windows Explorer and navigate to C:\\Program Files (x86)\\Siyano Labs Pvt. Ltd\\SiyanoAV Total Security.\r\n\r\nAttempt to rename a non-essential file like FontAwesome.WPF.dll to FontAwesome.WPF.dll.old. (Simulation successful, as shown in image_3.png/image_4.png).\r\n\r\n(CRITICAL STEP) Attempt to rename a critical component, like SiyanoAV Total Security.exe.\r\n\r\nObservation: SiyanoAV does not prevent this action.\r\n\r\nConsequence: The main AV interface will fail to launch, or the real-time scanning engine will crash, leaving the system undefended.\r\n\r\nSuggested Solution:\r\n\r\nImmediate UI Update: Add a 'Self-Protection' (or 'Anti-Tamper') toggle to the 'Security' > 'General Settings' dashboard (image_3.png). This should be ON by default and require Administrative privileges (UAC) to modify.\r\n\r\nCore Driver Implementation: Implement kernel-mode hook-based protection (or utilizes modern ELAM - Early Launch Anti-Malware) to intercept and block system calls (e.g., NtTerminateProcess, NtOpenProcess, CreateFile) directed at protected SiyanoAV resources (Processes, Services, Registry Keys, and the installation folder).",
+    "attachments": [
+      {
+        "fileName": "dad1b70a-7542-424b-a4a1-b379052e924c.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 839115
+      }
+    ],
+    "createdAt": "2026-10-09T10:49:15.911Z",
+    "updatedAt": "2026-10-09T10:49:15.911Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "b81f2e1d-d211-48f8-a007-490691ba02ca",
+    "ticketId": "Ticket03",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "901a934f-3b71-4d5b-b401-99b2eca7dd07.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 544790
+      },
+      {
+        "fileName": "905ecd4a-83d9-430c-aacc-c3a8f779b5c6.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 335452
+      },
+      {
+        "fileName": "aee25380-c3ed-40e0-9df7-19921e225cdf.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 432823
+      }
+    ],
+    "createdAt": "2026-10-09T10:50:06.293Z",
+    "updatedAt": "2026-10-09T10:50:06.293Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "d3604b99-ba48-492c-8e18-6fd67709180c",
+    "ticketId": "Ticket03",
+    "text": "SiyanoAV Firewall UI Rules Are Non-Functional and Fail to Filter Application Traffic\r\n\r\nSeverity: Critical\r\n\r\nPriority: High\r\n\r\nComponent: Network / Firewall Module & WFP Driver\r\n\r\nSummary\r\nSiyanoAV Firewall fails to enforce user-configured firewall rules. Setting an application rule to \"Block\" (e.g., blocking Brave browser) does not drop or intercept network packets. The target application retains full internet connectivity. Comparative testing with native Windows Defender Firewall confirms that standard OS firewall blocking functions correctly, proving SiyanoAV's engine is disconnected from active filtering.\r\n\r\nSteps to Reproduce\r\nOpen SiyanoAV Total Security and navigate to Security > Firewall > Rules.\r\n\r\nAdd or configure a rule to Block network access for a specific browser/application (e.g., Brave Browser).\r\n\r\nEnsure the rule is toggled Active in the SiyanoAV dashboard.\r\n\r\nLaunch the target application (Brave Browser) and attempt to navigate to any external web address (e.g., [https://rentthelook.in](https://rentthelook.in)).\r\n\r\nObservation: The webpage loads successfully without network restriction.\r\n\r\nComparative Test (Windows Defender Firewall)\r\nOpen wf.msc (Windows Defender Firewall with Advanced Security).\r\n\r\nCreate an Outbound Rule -> Program -> Select Executable -> Choose Block the connection.\r\n\r\nLaunch the target executable.\r\n\r\nObservation: Traffic is dropped immediately, confirming Windows Filtering Platform (WFP) is working as expected.\r\n\r\nExpected Result\r\nSiyanoAV Firewall should intercept network traffic for configured applications and block inbound/outbound packets when a \"Block\" rule is set.\r\n\r\nActual Result\r\nSiyanoAV Firewall rules have no effect on network traffic. Applications bypass SiyanoAV rules completely.\r\n\r\nRoot Cause Hypothesis\r\nDriver Unbound: SiyanoAV network driver (WFP callout driver / NDIS filter) is either not installed, disabled, or failing to bind to active network adapters.\r\n\r\nUI-to-Engine Disconnect: Front-end UI rule changes are saved locally (e.g., XML/JSON config) but are never passed down to the underlying kernel driver/service.",
+    "attachments": [
+      {
+        "fileName": "e85f14c8-0d81-49e9-849e-14334f7a3c57.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 1025563
+      }
+    ],
+    "createdAt": "2026-10-09T10:50:59.308Z",
+    "updatedAt": "2026-10-09T10:50:59.308Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "55cb69a7-2c57-4d59-9a3e-f44d09e8e4a4",
+    "ticketId": "Ticket04",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "71548cca-0b06-42c2-a167-f3547266470e.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 632510
+      },
+      {
+        "fileName": "52d1c52b-f276-43a5-8529-515cc85e50bd.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 661771
+      },
+      {
+        "fileName": "f6049995-5623-4464-99f1-bd12d1a7cf47.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 595548
+      }
+    ],
+    "createdAt": "2026-10-09T10:51:43.643Z",
+    "updatedAt": "2026-10-09T10:51:43.643Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "5188bd6a-68de-4dca-8e72-4945d2ac5918",
+    "ticketId": "Ticket04",
+    "text": "Parental Control: WhatsApp Misclassified as Social Network & Whitelist Override Fails\r\n\r\nSeverity: High\r\n\r\nPriority: High\r\n\r\nComponent: Parental Control / Web Categorization & Filtering Engine\r\n\r\nSummary\r\nThe Parental Control module misclassifies WhatsApp under \"Social networks\" instead of \"Games and chats\". Additionally, explicitly adding web.whatsapp.com to the Whitelist fails to grant access when \"Social networks\" blocking is enabled, causing WhatsApp connections to fail continuously.\r\n\r\nSteps to Reproduce\r\nLaunch SiyanoAV Total Security and navigate to Privacy > Parental Control Settings > Websites access by category.\r\n\r\nEnable access restriction for \"Social networks\" (keep \"Games and chats\" disabled).\r\n\r\nOpen WhatsApp Web (web.whatsapp.com) or WhatsApp Desktop.\r\n\r\nObservation 1: WhatsApp gets blocked immediately due to being categorized under Social Networks.\r\n\r\nNavigate to White and Black lists of sites tab.\r\n\r\nAdd web.whatsapp.com as Allowed to the Whitelist.\r\n\r\nRetry connecting on WhatsApp Web / Desktop.\r\n\r\nObservation 2: The connection attempt still fails, returning \"An unexpected error occurred\".\r\n\r\nExpected Result\r\nWhatsApp should be classified under the \"Games and chats\" category.\r\n\r\nWhitelisted domains (web.whatsapp.com) should bypass all category-based restrictions unconditionally.\r\n\r\nActual Result\r\nBlocking \"Social networks\" restricts WhatsApp usage.\r\n\r\nAdding web.whatsapp.com to the Whitelist has no effect, and access remains blocked.\r\n\r\nRoot Cause Hypothesis\r\nCategorization DB: The cloud/local site-rating database maps whatsapp.com and web.whatsapp.com under Category: Social Media instead of Category: Instant Messaging / Chat.\r\n\r\nFilter Rule Pipeline: The filtering driver prioritizes Category Deny rules over explicit Whitelist Accept rules. Whitelist checking must occur at step 0 in the lookup pipeline before category classification is queried.",
+    "attachments": [
+      {
+        "fileName": "c1b77d34-a85b-4257-8e9f-2def76e0fdf3.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 1040436
+      }
+    ],
+    "createdAt": "2026-10-09T10:52:40.969Z",
+    "updatedAt": "2026-10-09T10:52:40.969Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "f52d45f3-6fc4-48cc-889c-21fa1659463e",
+    "ticketId": "Ticket01",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "d002fab2-07c3-4efc-9ab3-480f6c46e4a5.webm",
+        "name": "voice-note-1791543326121.webm",
+        "mimeType": "audio/webm",
+        "size": 984742
+      }
+    ],
+    "createdAt": "2026-10-09T10:55:28.926Z",
+    "updatedAt": "2026-10-09T10:55:28.926Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "935ac5cd-5b8a-4e5e-adcf-bbcb2b484fa1",
+    "ticketId": "Ticket02",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "7f66bcd0-78ac-429f-a493-66f29df0806c.webm",
+        "name": "voice-note-1791543503327.webm",
+        "mimeType": "audio/webm",
+        "size": 1074978
+      }
+    ],
+    "createdAt": "2026-10-09T10:58:25.286Z",
+    "updatedAt": "2026-10-09T10:58:25.286Z",
+    "author": "Sanjay"
   }
 ]
