@@ -345,6 +345,9 @@
     .selected-ticket-head { display: flex; min-width: 0; align-items: start; justify-content: space-between; gap: 12px; padding: 14px; background: #0f172a; }
     .selected-ticket-head > div:first-child { min-width: 0; overflow-wrap: anywhere; }
     .selected-ticket-head .ticket-badges { max-width: 45%; flex-wrap: wrap; }
+    .ticket-title-edit { flex: 0 0 auto; border: 1px solid rgba(148,163,184,.28); border-radius: 999px; padding: 3px 8px; color: #cbd5e1; background: rgba(255,255,255,.045); font-size: 11px; font-weight: 650; line-height: 1.4; transition: border-color .16s, background .16s, color .16s; }
+    .ticket-title-edit:hover { border-color: rgba(56,189,248,.5); color: #e0f2fe; background: rgba(56,189,248,.12); }
+    .ticket-title-edit:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
     .selected-ticket h4 { margin: 3px 0 0; color: #ea580c; font-size: 18px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
     .selected-ticket-head .ticket-id { color: #7dd3fc; }
     .selected-ticket-copy { margin: 0; padding: 14px; color: #334155; background: #ffffff; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -614,6 +617,7 @@
               <div class="ticket-badges">
                 <span class="status-tag" id="selected-ticket-status"></span>
                 <span class="risk-tag" id="selected-ticket-risk" hidden></span>
+                <button class="ticket-title-edit" id="edit-ticket-title" type="button" aria-label="Edit ticket title">✎ Edit Title</button>
               </div>
             </div>
             <p class="selected-ticket-copy" id="selected-ticket-description"></p>
@@ -704,6 +708,16 @@
         <div class="field"><label for="ticket-description">Description</label><textarea id="ticket-description" name="description" maxlength="10000" required placeholder="Describe the observed behavior, impact, and context…"></textarea></div>
         <div class="field"><label for="ticket-tags">Tags (comma-separated, optional)</label><input id="ticket-tags" name="tags" maxlength="400" placeholder="e.g. HIPS, Malware, RealTimeScan"></div>
         <button class="button primary" type="submit">Create ticket</button>
+      </form>
+    </div>
+  </dialog>
+  <dialog class="delete-dialog" id="title-edit-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-head"><div><h3>Edit ticket title</h3><p>Update the title shown in the active ticket and issue register.</p></div><button class="close" type="button" data-close="title-edit-dialog" aria-label="Close dialog">×</button></div>
+      <form class="form-stack" id="title-edit-form">
+        <div class="field"><label for="ticket-title-edit-input">Ticket title</label><input id="ticket-title-edit-input" name="title" maxlength="200" required></div>
+        <div class="delete-message" id="title-edit-message" role="alert" aria-live="assertive"></div>
+        <div class="delete-actions"><button class="button ghost small" type="button" data-close="title-edit-dialog">Cancel</button><button class="button primary small" id="save-ticket-title" type="submit">Save Title</button></div>
       </form>
     </div>
   </dialog>
@@ -2176,6 +2190,48 @@
         if (currentTicketId === ticketId) renderSelectedTicket(updatedTicket);
         message.textContent = 'Workflow changes saved.';
         showToast('Ticket workflow updated.');
+      } catch (error) {
+        message.textContent = error.message;
+        showToast(error.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('edit-ticket-title').addEventListener('click', () => {
+      const ticket = tickets.find((entry) => entry.id === currentTicketId);
+      if (!ticket) return;
+      document.getElementById('ticket-title-edit-input').value = ticket.title;
+      document.getElementById('title-edit-message').textContent = '';
+      document.getElementById('title-edit-dialog').showModal();
+      document.getElementById('ticket-title-edit-input').focus();
+    });
+
+    document.getElementById('title-edit-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const ticketId = currentTicketId;
+      if (!ticketId) return;
+      const input = document.getElementById('ticket-title-edit-input');
+      const button = document.getElementById('save-ticket-title');
+      const message = document.getElementById('title-edit-message');
+      button.disabled = true;
+      message.textContent = '';
+      try {
+        const updatedTicket = await api(`/api/tickets/${encodeURIComponent(ticketId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: input.value }),
+        });
+        const ticketIndex = tickets.findIndex((ticket) => ticket.id === ticketId);
+        if (ticketIndex !== -1) tickets[ticketIndex] = updatedTicket;
+        renderTickets();
+        if (currentTicketId === ticketId) {
+          renderSelectedTicket(updatedTicket);
+          document.getElementById('active-ticket-label').textContent =
+            `${updatedTicket.product} · ${updatedTicket.id} · ${updatedTicket.title}`;
+        }
+        document.getElementById('title-edit-dialog').close();
+        showToast('Ticket title updated.');
       } catch (error) {
         message.textContent = error.message;
         showToast(error.message, true);

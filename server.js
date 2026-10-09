@@ -68,6 +68,8 @@ const activityLogSchema = new mongoose.Schema({
   action: { type: String, required: true },
   statusFrom: String,
   statusTo: String,
+  titleFrom: String,
+  titleTo: String,
   performedBy: { type: String, required: true },
   timestamp: { type: Date, required: true },
 }, { _id: false });
@@ -153,9 +155,11 @@ function normalizeTicketActivityLogs(tickets) {
     }
     for (const event of ticket.activityLog) {
       if (!event || typeof event !== 'object' || Array.isArray(event)
-        || !['status_changed', 'severity_changed', 'product_changed'].includes(event.action)
-        || (event.statusFrom !== null && typeof event.statusFrom !== 'string')
-        || (event.statusTo !== null && typeof event.statusTo !== 'string')
+        || !['status_changed', 'severity_changed', 'product_changed', 'title_changed'].includes(event.action)
+        || (event.action === 'title_changed'
+          ? (typeof event.titleFrom !== 'string' || typeof event.titleTo !== 'string')
+          : ((event.statusFrom !== null && typeof event.statusFrom !== 'string')
+            || (event.statusTo !== null && typeof event.statusTo !== 'string')))
         || typeof event.performedBy !== 'string' || !event.performedBy.trim()
         || typeof event.timestamp !== 'string' || !Number.isFinite(Date.parse(event.timestamp))) {
         const error = new Error('Ticket activity log contains an invalid event.');
@@ -1008,10 +1012,10 @@ async function updateTicket(req, res, next) {
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
       return res.status(400).json({ error: 'Provide ticket fields to update.' });
     }
-    const allowedFields = new Set(['status', 'severity', 'product']);
+    const allowedFields = new Set(['title', 'status', 'severity', 'product']);
     const fields = Object.keys(updates);
     if (!fields.length || fields.some((field) => !allowedFields.has(field))) {
-      return res.status(400).json({ error: 'Only status, severity, and product category can be updated.' });
+      return res.status(400).json({ error: 'Only title, status, severity, and product category can be updated.' });
     }
     const document = await Ticket.findById(req.params.id).lean();
     if (!document) return res.status(404).json({ error: 'Ticket not found.' });
@@ -1029,6 +1033,22 @@ async function updateTicket(req, res, next) {
         timestamp: new Date(timestamp),
       });
     };
+    if (Object.hasOwn(updates, 'title')) {
+      if (typeof updates.title !== 'string' || !updates.title.trim() || updates.title.trim().length > 200) {
+        return res.status(400).json({ error: 'Ticket title must be between 1 and 200 characters.' });
+      }
+      const nextTitle = updates.title.trim();
+      if (ticket.title !== nextTitle) {
+        activityEvents.push({
+          action: 'title_changed',
+          titleFrom: ticket.title,
+          titleTo: nextTitle,
+          performedBy: req.user.username,
+          timestamp: new Date(timestamp),
+        });
+        updatesToSet.title = nextTitle;
+      }
+    }
     if (Object.hasOwn(updates, 'status')) {
       const nextStatus = canonicalTicketStatus(updates.status);
       if (!nextStatus) {
