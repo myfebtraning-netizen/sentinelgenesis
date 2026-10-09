@@ -38,11 +38,12 @@
   {
     "id": "78ac2331-1db1-4e25-aef5-8fc627b00606",
     "ticketId": "Ticket06",
-    "text": "Root-Cause Hypothesis: Selection state may be lost in bulk restore, quarantine metadata may not sync to exclusions, or UI/service calls may fail without isolated error handling. These are separate repro candidates. Example Scenario to Validate: Quarantine two harmless test files, restore only one, verify the other stays quarantined, then restart the UI and recheck exceptions. Separately exercise add-folder and delete flows with permission denial and interrupted service responses. Expected vs. Reported Behavior: Expected: only the selected item is restored, exception state persists, and failures surface without a crash. Reported: bulk restore, missing exception, add-folder crash, delete failure, and assessment mismatch require independent confirmation.",
+    "text": "Issue Title: [CRITICAL] SiyanoAV Drive: Application Crash on Folder Selection, Broken Profile Deletion, & Missing Local AES-256 Pre-Encryption\nIssue Type: Bug\nSeverity: Critical\nPriority: High\nComponent: SiyanoAV Drive / Cloud Backup Module\n\nSummary:\nThe SiyanoAV Drive cloud backup module exhibits three major defects: an unhandled exception/application crash when selecting source folders, a non-responsive profile deletion action, and a critical security omission where files are transmitted and stored unencrypted without local AES-256 pre-encryption.\n\nSteps to Reproduce:\n1. Open SiyanoAV Total Security and navigate to Security > SiyanoAV Drive.\n2. Create or open a backup task profile (e.g., SANJAYGHSVR).\n3. Click the [Add Folder] button under the Source configuration pane.\n   - Bug 1 Observation: The application instantly crashes and terminates process execution.\n4. Re-launch the application, navigate to SiyanoAV Drive, and attempt to delete an existing backup profile using the Delete action.\n   - Bug 2 Observation: The delete command fails to trigger, leaving the profile intact.\n5. Inspect local staging files and network packet streams during an active backup routine.\n   - Bug 3 Observation: Files are transmitted raw to the cloud destination without prior local encryption.\n\nExpected Result:\n1. Folder Selection: The directory browser modal should load cleanly, allowing users to select source folders without application instability.\n2. Profile Management: The Delete action should cleanly erase selected backup profiles and purge related configurations.\n3. Zero-Knowledge Encryption: Files queued for backup must be processed through a local staging pipeline, encrypted using AES-256 with user-defined or secure product keys, prior to transit and storage.\n\nActual Result:\n1. Add Folder trigger causes an immediate application crash.\n2. Profile Delete action is completely non-functional.\n3. No local encryption layer exists, leaving user data exposed in plain text during transit and remote storage.\n\nProposed Fix / Developer Action:\n- Resolve Memory Leak / UI Exception: Debug the folder picker API handle in the Add Folder module to prevent process crashing.\n- Fix UI Event Listener: Bind the profile deletion handler correctly to trigger backend API/database profile purge functions.\n- Implement AES-256 Encryption Pipeline: Build an end-to-end local encryption module to encrypt payload blocks before network socket transmission.",
     "attachments": [],
     "createdAt": "2026-10-08T07:42:00.000Z",
-    "updatedAt": "2026-10-08T07:42:00.000Z",
-    "author": "Admin"
+    "updatedAt": "2026-10-09T11:42:53.119Z",
+    "author": "Admin",
+    "updatedBy": "Sanjay"
   },
   {
     "id": "4aa169a9-d26b-4439-8660-7c06b0b2372e",
@@ -238,6 +239,148 @@
     ],
     "createdAt": "2026-10-09T10:58:25.286Z",
     "updatedAt": "2026-10-09T10:58:25.286Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "d1bbb008-5353-4d91-947e-73c795b5d24a",
+    "ticketId": "Ticket03",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "b1debbb5-6262-41d5-aee8-d37d70ae8938.webm",
+        "name": "voice-note-1791544359036.webm",
+        "mimeType": "audio/webm",
+        "size": 1950810
+      }
+    ],
+    "createdAt": "2026-10-09T11:12:42.131Z",
+    "updatedAt": "2026-10-09T11:12:42.131Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "0942cc25-20cf-406c-a844-dc360e551bbb",
+    "ticketId": "Ticket04",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "4ad629fd-20b2-4a35-8278-85325984e859.webm",
+        "name": "voice-note-1791544525268.webm",
+        "mimeType": "audio/webm",
+        "size": 1651316
+      }
+    ],
+    "createdAt": "2026-10-09T11:15:27.386Z",
+    "updatedAt": "2026-10-09T11:15:27.386Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "5de58f70-2e07-4e67-be4e-e1418f270122",
+    "ticketId": "Ticket05",
+    "text": "Issue Title: [HIGH] Parental Control: Incomplete Adult Domain DB Coverage & Missing Keyword Filtering Engine\nIssue Type: Bug\nSeverity: High\nPriority: High\nComponent: Parental Control / Web Content Filtering Engine & URL Database\n\nSummary:\nWhen enabling the Pornography category restriction under Parental Control Settings, the web filtering engine fails to block access to major adult platforms and aggregator directories. Furthermore, SiyanoAV lacks a dynamic keyword-based URL filtering engine, leaving no fallback protection against unclassified or newly created adult domains.\n\nSteps to Reproduce:\n1. Open SiyanoAV Total Security and navigate to Privacy > Parental Control Settings > Website Access by Category.\n2. Toggle the Pornography restriction to ON.\n3. Open a web browser and attempt to navigate to major adult directory aggregators or high-traffic adult sites (e.g., https://toppornsites.com/, https://xvideos.com).\n4. Observation: The websites open directly without triggering any block page or warning overlay.\n\nExpected Result:\n1. The web filter should intercept HTTP/HTTPS connections to all adult domains contained within standard category intelligence feeds.\n2. The system should support keyword matching on the requested URL path/query string and TLS SNI hostname to ensure complete fallback coverage.\n\nActual Result:\nOnly a minor fraction of adult domains are intercepted. High-traffic directory indexes and top-tier adult sites bypass the filter entirely.\n\nProposed Technical Solution:\n- Database Feed Integration: Upgrade the local/cloud URL categorization database by integrating a continuous adult threat feed covering 8.5M+ explicit domains.\n- Keyword Filter Engine: Implement a regex/string-matching engine within the Network Filter / WFP (Windows Filtering Platform) driver to inspect outbound HTTP GET requests and TLS SNI hostnames against user-defined and default blocked key terms (porn, xxx, adult, cam, sex).",
+    "attachments": [
+      {
+        "fileName": "15cb9771-2835-45db-9d26-4724602fa5e3.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 304168
+      },
+      {
+        "fileName": "1914d225-858d-4ddf-a29b-063a2d285229.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 1126147
+      }
+    ],
+    "createdAt": "2026-10-09T11:26:11.545Z",
+    "updatedAt": "2026-10-09T11:29:39.492Z",
+    "author": "Sanjay",
+    "updatedBy": "Sanjay"
+  },
+  {
+    "id": "ddfa3875-14b0-454b-bc1c-31d683937ade",
+    "ticketId": "Ticket05",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "56f98e88-db25-4bb2-b8d2-3686f12f3ff2.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 1214084
+      }
+    ],
+    "createdAt": "2026-10-09T11:26:15.877Z",
+    "updatedAt": "2026-10-09T11:26:15.877Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "171c91ca-b822-4699-8939-cb0669d56bcd",
+    "ticketId": "Ticket05",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "387442fb-100b-49a5-8d42-84066828dfcc.webm",
+        "name": "voice-note-1791545520261.webm",
+        "mimeType": "audio/webm",
+        "size": 1531532
+      }
+    ],
+    "createdAt": "2026-10-09T11:32:02.549Z",
+    "updatedAt": "2026-10-09T11:32:02.549Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "c39f9dc6-2f9e-4ebd-aa18-82f4258a0ec5",
+    "ticketId": "Ticket06",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "55669b6a-f557-42bb-be75-727ef5e31702.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 171717
+      },
+      {
+        "fileName": "6f13ffad-3d80-42bb-88ee-28f404ef5dc9.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 99665
+      }
+    ],
+    "createdAt": "2026-10-09T11:41:21.228Z",
+    "updatedAt": "2026-10-09T11:44:45.954Z",
+    "author": "Sanjay",
+    "updatedBy": "Sanjay"
+  },
+  {
+    "id": "d3226196-bcc7-475c-9b07-f26245bc82ca",
+    "ticketId": "Ticket06",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "2e474ee1-8a66-4e7c-9786-acc139daaf09.png",
+        "name": "image.png",
+        "mimeType": "image/png",
+        "size": 784096
+      }
+    ],
+    "createdAt": "2026-10-09T11:45:18.037Z",
+    "updatedAt": "2026-10-09T11:45:18.037Z",
+    "author": "Sanjay"
+  },
+  {
+    "id": "fefa42c8-caa5-4de8-8360-7b78b52ddd2f",
+    "ticketId": "Ticket06",
+    "text": "",
+    "attachments": [
+      {
+        "fileName": "e9ae2062-51eb-4310-afab-141219c6688e.webm",
+        "name": "voice-note-1791546551182.webm",
+        "mimeType": "audio/webm",
+        "size": 3196307
+      }
+    ],
+    "createdAt": "2026-10-09T11:49:13.660Z",
+    "updatedAt": "2026-10-09T11:49:13.660Z",
     "author": "Sanjay"
   }
 ]

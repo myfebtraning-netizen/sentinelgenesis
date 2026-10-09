@@ -98,8 +98,6 @@
     .hero-copy .eyebrow { margin: 0 0 5px; color: var(--cyan); font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
     .hero h2 { margin: 0; font-size: clamp(21px, 3vw, 31px); letter-spacing: -.045em; }
     .hero p:last-child { margin: 6px 0 0; color: var(--muted); }
-    .sync-state { z-index: 1; flex: 0 0 auto; color: var(--muted); font-size: 11px; }
-    .sync-state::before { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px rgba(52,211,153,.55); content: ""; }
     .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 17px; }
     .metric, .panel { border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, rgba(18,32,58,.83), rgba(13,23,45,.82)); box-shadow: var(--shadow); backdrop-filter: blur(12px); }
     .metric { display: flex; justify-content: space-between; align-items: center; padding: 15px 18px; }
@@ -234,7 +232,6 @@
       .metric strong { font-size: 21px; }
       .metric-icon { display: none; }
       .hero { align-items: start; flex-direction: column; padding: 17px; }
-      .sync-state { align-self: end; }
       .header-side { grid-template-columns: 1fr; }
       .header-actions { justify-content: start; }
       .header-actions .button { flex: 1; }
@@ -278,6 +275,22 @@
     .toolbar .button.ghost:hover { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
     .toolbar-status { flex: 0 0 auto; border: 1px solid #bbf7d0; border-radius: 999px; padding: 6px 10px; color: #15803d; background: #f0fdf4; font-size: 10px; font-weight: 750; white-space: nowrap; }
     .toolbar-status::before { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #16a34a; content: ""; }
+    .sync-pill { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: border-color .16s, background .16s, box-shadow .16s, transform .16s; }
+    .sync-pill:hover:not(:disabled) { border-color: #86efac; background: #dcfce7; box-shadow: 0 0 0 3px rgba(34,197,94,.12), 0 4px 12px rgba(22,163,74,.14); transform: translateY(-1px); }
+    .sync-pill:focus-visible { outline: 3px solid rgba(34,197,94,.35); outline-offset: 2px; }
+    .sync-pill::before { animation: sync-pulse 1.8s ease-in-out infinite; }
+    .sync-pill.is-syncing { border-color: #bae6fd; color: #0369a1; background: #f0f9ff; }
+    .sync-pill.is-syncing::before { background: #0284c7; box-shadow: 0 0 10px rgba(2,132,199,.45); }
+    .sync-pill.is-failed { border-color: #fecdd3; color: #be123c; background: #fff1f2; }
+    .sync-pill.is-failed::before { animation: none; background: #e11d48; box-shadow: 0 0 8px rgba(225,29,72,.35); }
+    .sync-pill:disabled { cursor: wait; opacity: .8; }
+    .sync-icon { display: inline-block; }
+    .sync-pill.is-syncing .sync-icon { animation: sync-spin .9s linear infinite; }
+    @keyframes sync-pulse { 50% { opacity: .45; box-shadow: 0 0 3px rgba(22,163,74,.25); } }
+    @keyframes sync-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .sync-pill, .sync-pill::before, .sync-icon { animation: none; transition: none; }
+    }
     .page { width: min(1320px, calc(100% - 64px)); max-width: none; margin: 0 auto; padding: 18px 0 55px; }
     .hero { display: none; }
     .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 25px; }
@@ -555,7 +568,10 @@
             <button class="button primary" id="import-backup-button" type="button"><span class="action-icon" aria-hidden="true">↑</span><span>Import All Tickets</span></button>
             <input type="file" id="importFileInput" accept=".zip" hidden>
           </div>
-          <span class="toolbar-status" id="sync-state" aria-live="polite">Synced</span>
+          <button class="toolbar-status sync-pill" id="syncStatus" type="button" aria-label="Sync with MongoDB Atlas" aria-live="polite" aria-busy="false">
+            <span class="sync-icon" aria-hidden="true">🔄</span>
+            <span class="sync-label">Sync Now</span>
+          </button>
         </div>
         <section class="metrics" aria-label="Audit metrics">
           <article class="metric"><div><span class="metric-label">Total concerns</span><strong id="total-count">0</strong></div><span class="metric-icon">▤</span></article>
@@ -825,6 +841,7 @@
     const authScreen = document.getElementById('auth-screen');
     const appShell = document.getElementById('app-shell');
     const ticketList = document.getElementById('ticket-list');
+    const syncStatus = document.getElementById('syncStatus');
     if ('IntersectionObserver' in window) {
       ticketCardObserver = new IntersectionObserver((entries) => {
         if (performance.now() < manualSelectionOverrideUntil) return;
@@ -883,6 +900,58 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove('visible'), 2800);
     }
+
+    function setSyncStatus(state, label) {
+      syncStatus.classList.toggle('is-syncing', state === 'syncing');
+      syncStatus.classList.toggle('is-failed', state === 'failed');
+      syncStatus.setAttribute('aria-busy', String(state === 'syncing'));
+      syncStatus.setAttribute('aria-label', `Sync with MongoDB Atlas — ${label}`);
+      syncStatus.querySelector('.sync-label').textContent = label;
+    }
+
+    function formatSyncTime(date = new Date()) {
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+    }
+
+    async function syncTicketsWithAtlas() {
+      if (syncStatus.disabled) return;
+      syncStatus.disabled = true;
+      setSyncStatus('syncing', 'Syncing with Atlas...');
+      try {
+        const [loaded, counts] = await Promise.all([
+          api('/api/tickets'),
+          api('/api/notes/counts'),
+        ]);
+        if (!Array.isArray(loaded)) throw new Error('The tickets response was invalid.');
+        if (!counts || typeof counts !== 'object' || Array.isArray(counts)) {
+          throw new Error('The audit note counts response was invalid.');
+        }
+
+        tickets = loaded;
+        noteCounts = counts;
+        renderTagFilters();
+        renderTickets();
+        const activeTicket = tickets.find((ticket) => ticket.id === currentTicketId);
+        if (activeTicket) {
+          renderSelectedTicket(activeTicket);
+          document.getElementById('active-ticket-label').textContent =
+            `${activeTicket.product} · ${activeTicket.id} · ${activeTicket.title}`;
+        }
+        setSyncStatus('success', `Synced - ${formatSyncTime()}`);
+      } catch (error) {
+        setSyncStatus('failed', 'Sync Failed — Retry');
+        showToast(`Sync failed: ${error.message}`, true);
+      } finally {
+        syncStatus.disabled = false;
+      }
+    }
+
+    syncStatus.addEventListener('click', syncTicketsWithAtlas);
 
     async function api(url, options = {}) {
       const headers = new Headers(options.headers || {});
@@ -1775,6 +1844,7 @@
       const productTickets = getFilteredTickets();
       if (!currentTicketId && productTickets.length) await selectTicket(productTickets[productTickets.length - 1].id);
       else if (currentTicketId) renderSelectedTicket(tickets.find((ticket) => ticket.id === currentTicketId));
+      if (!syncStatus.disabled) setSyncStatus('success', `Synced - ${formatSyncTime()}`);
     }
 
     async function loadNoteCountsFromApi() {
@@ -1876,7 +1946,6 @@
         noteSnapshot = snapshot;
         await renderNotes(notes, ticketId);
       }
-      document.getElementById('sync-state').textContent = `Synced · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     }
 
     async function loadTicketCommentsFromApi(ticketId) {
