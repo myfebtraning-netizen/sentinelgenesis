@@ -164,6 +164,23 @@
     .selected-files { border: 1px solid rgba(56,189,248,.2); border-radius: 7px; padding: 7px 9px; color: #96a9c4; background: rgba(56,189,248,.06); font-size: 10px; overflow-wrap: anywhere; }
     .selected-files:empty { display: none; }
     .notes-feed { display: grid; max-height: 450px; gap: 10px; overflow-y: auto; padding: 1px 4px 1px 1px; scrollbar-color: #24415f transparent; }
+    .developer-comments { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .developer-comments .panel-heading { margin-bottom: 10px; }
+    .developer-comments .panel-heading h3 { font-size: 14px; }
+    .developer-comment-form { display: grid; grid-template-columns: minmax(150px, .35fr) minmax(0, 1fr) auto; align-items: end; gap: 9px; margin-bottom: 12px; }
+    .developer-comment-form .field { gap: 4px; }
+    .developer-comment-form .field > span { color: #cbd8eb; font-size: 10px; font-weight: 650; }
+    .developer-comment-form select { min-height: 38px; padding: 7px 9px; font-size: 11px; }
+    .developer-comment-form textarea { min-height: 38px; height: 38px; resize: vertical; padding: 8px 10px; font-size: 11px; }
+    .developer-comment-form button { min-height: 38px; white-space: nowrap; }
+    .developer-comment-message { min-height: 0; margin: -5px 0 9px; color: var(--red); font-size: 11px; }
+    .developer-comment-message:empty { display: none; }
+    .developer-comments-feed { display: grid; max-height: 320px; gap: 8px; overflow-y: auto; padding-right: 4px; }
+    .developer-comment { border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; background: rgba(7,15,33,.42); }
+    .developer-comment-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .developer-comment-author { color: #dce8f9; font-size: 10px; font-weight: 750; }
+    .developer-comment-date { color: #8193ad; font-size: 9px; }
+    .developer-comment-text { margin: 7px 0 0; color: #d2dfef; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
     .note-card { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 12px; background: rgba(7,15,33,.54); }
     .note-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
     .note-author { color: #e1ecfb; font-size: 11px; font-weight: 750; }
@@ -341,6 +358,9 @@
     .workspace-right { display: flex; min-width: 0; }
     .workspace-right > .evidence-panel { display: flex; min-width: 0; min-height: 100%; flex: 1 1 auto; flex-direction: column; }
     .workspace-right > .evidence-panel .notes-feed { min-height: 0; max-height: 680px; flex: 1 1 auto; overflow-y: auto; }
+    @media (max-width: 640px) {
+      .developer-comment-form { grid-template-columns: minmax(0, 1fr); }
+    }
     .selected-ticket { min-width: 0; margin-bottom: 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(15,23,42,.09); }
     .selected-ticket-head { display: flex; min-width: 0; align-items: start; justify-content: space-between; gap: 12px; padding: 14px; background: #0f172a; }
     .selected-ticket-head > div:first-child { min-width: 0; overflow-wrap: anywhere; }
@@ -667,6 +687,28 @@
               <audio class="audio-preview" id="audio-preview" controls hidden></audio>
             </form>
             <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
+            <section class="developer-comments" aria-labelledby="developer-comments-title">
+              <div class="panel-heading">
+                <div><span class="panel-kicker">Team discussion</span><h3 id="developer-comments-title">Developer Comments</h3></div>
+              </div>
+              <form class="developer-comment-form" id="developer-comment-form">
+                <label class="field" for="developer-comment-role">
+                  <span>Role / Author</span>
+                  <select id="developer-comment-role" name="role">
+                    <option>Developer</option>
+                    <option>SiyanoAV Team</option>
+                    <option>Auditor</option>
+                  </select>
+                </label>
+                <label class="field" for="developer-comment-text">
+                  <span>Comment</span>
+                  <textarea id="developer-comment-text" name="text" maxlength="10000" required placeholder="Share a development update or response…" aria-label="Developer comment"></textarea>
+                </label>
+                <button class="button primary small" id="post-developer-comment" type="submit">Post Comment</button>
+              </form>
+              <div class="developer-comment-message" id="developer-comment-message" role="alert" aria-live="assertive"></div>
+              <div class="developer-comments-feed" id="developer-comments-feed" aria-live="polite"><div class="empty">Choose a ticket to view developer comments.</div></div>
+            </section>
           </section>
         </div>
       </div>
@@ -756,6 +798,7 @@
   <script>
     let currentTicketId = null;
     let tickets = [];
+    let ticketComments = [];
     let currentUser = null;
     let accessToken = sessionStorage.getItem('auditToken');
     let pollTimer = null;
@@ -1765,8 +1808,12 @@
 
     function renderSelectedTicket(ticket) {
       const details = document.getElementById('selected-ticket-details');
+      const commentForm = document.getElementById('developer-comment-form');
+      [...commentForm.elements].forEach((control) => { control.disabled = !ticket; });
       if (!ticket) {
         details.hidden = true;
+        ticketComments = [];
+        renderTicketComments([]);
         return;
       }
       details.hidden = false;
@@ -1788,9 +1835,42 @@
       document.getElementById('workflow-message').textContent = '';
     }
 
+    function renderTicketComments(comments, ticketId = currentTicketId) {
+      const feed = document.getElementById('developer-comments-feed');
+      feed.replaceChildren();
+      if (!ticketId) {
+        feed.innerHTML = '<div class="empty">Choose a ticket to view developer comments.</div>';
+        return;
+      }
+      if (!comments.length) {
+        feed.innerHTML = '<div class="empty">No developer comments yet.</div>';
+        return;
+      }
+      for (const comment of [...comments].reverse()) {
+        const card = document.createElement('article');
+        card.className = 'developer-comment';
+        const head = document.createElement('div');
+        head.className = 'developer-comment-head';
+        const author = document.createElement('span');
+        author.className = 'developer-comment-author';
+        author.textContent = `${comment.role} · ${comment.author}`;
+        const date = document.createElement('time');
+        date.className = 'developer-comment-date';
+        date.dateTime = comment.createdAt;
+        date.textContent = new Date(comment.createdAt).toLocaleString();
+        head.append(author, date);
+        const text = document.createElement('p');
+        text.className = 'developer-comment-text';
+        text.textContent = comment.text;
+        card.append(head, text);
+        feed.append(card);
+      }
+    }
+
     async function selectTicket(ticketId) {
       currentTicketId = ticketId;
       noteSnapshot = null;
+      ticketComments = [];
       const ticket = tickets.find((entry) => entry.id === ticketId);
       document.getElementById('active-ticket-label').textContent = ticket
         ? `${ticket.product} · ${ticket.id} · ${ticket.title}`
@@ -1798,7 +1878,12 @@
       renderSelectedTicket(ticket);
       renderTickets();
       notesFeed.innerHTML = '<div class="empty">Loading audit notes…</div>';
-      try { await loadAuditNotesFromApi(); }
+      document.getElementById('developer-comments-feed').innerHTML = '<div class="empty">Loading developer comments…</div>';
+      document.getElementById('developer-comment-text').value = '';
+      document.getElementById('developer-comment-message').textContent = '';
+      try {
+        await Promise.all([loadAuditNotesFromApi(), loadTicketCommentsFromApi(ticketId)]);
+      }
       catch (error) { showToast(error.message, true); }
     }
 
@@ -1815,6 +1900,23 @@
         await renderNotes(notes, ticketId);
       }
       document.getElementById('sync-state').textContent = `Synced · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    }
+
+    async function loadTicketCommentsFromApi(ticketId) {
+      if (!ticketId || appShell.hidden || !accessToken) return;
+      try {
+        const comments = await api(`/api/tickets/${encodeURIComponent(ticketId)}/comments`);
+        if (ticketId !== currentTicketId) return;
+        if (!Array.isArray(comments)) throw new Error('The ticket comments response was invalid.');
+        ticketComments = comments;
+        renderTicketComments(ticketComments, ticketId);
+      } catch (error) {
+        if (ticketId === currentTicketId) {
+          document.getElementById('developer-comments-feed').innerHTML =
+            '<div class="empty">Developer comments could not be loaded. Select the ticket again to retry.</div>';
+        }
+        throw error;
+      }
     }
 
     function revokeAttachmentUrls() {
@@ -2020,6 +2122,39 @@
         showToast('Ticket, notes, and associated files deleted.');
       } catch (error) { showToast(error.message, true); }
     }
+
+    document.getElementById('developer-comment-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const ticketId = currentTicketId;
+      if (!ticketId) {
+        showToast('Select a ticket before posting a developer comment.', true);
+        return;
+      }
+      const role = document.getElementById('developer-comment-role').value;
+      const textInput = document.getElementById('developer-comment-text');
+      const button = document.getElementById('post-developer-comment');
+      const message = document.getElementById('developer-comment-message');
+      button.disabled = true;
+      message.textContent = '';
+      try {
+        const comment = await api(`/api/tickets/${encodeURIComponent(ticketId)}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role, text: textInput.value }),
+        });
+        if (currentTicketId === ticketId) {
+          ticketComments.push(comment);
+          renderTicketComments(ticketComments, ticketId);
+          textInput.value = '';
+        }
+        showToast('Developer comment posted.');
+      } catch (error) {
+        if (currentTicketId === ticketId) message.textContent = error.message;
+        showToast(error.message, true);
+      } finally {
+        button.disabled = !currentTicketId;
+      }
+    });
 
     document.getElementById('note-form').addEventListener('submit', async (event) => {
       event.preventDefault();

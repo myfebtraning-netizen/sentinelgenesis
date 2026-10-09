@@ -70,9 +70,17 @@ const activityLogSchema = new mongoose.Schema({
   statusTo: String,
   titleFrom: String,
   titleTo: String,
+  message: String,
+  commentRole: String,
   performedBy: { type: String, required: true },
   timestamp: { type: Date, required: true },
 }, { _id: false });
+const ticketCommentSchema = new mongoose.Schema({
+  author: { type: String, required: true },
+  role: { type: String, enum: ['Developer', 'SiyanoAV Team', 'Auditor'], required: true },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
 const ticketSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   title: { type: String, required: true },
@@ -82,6 +90,7 @@ const ticketSchema = new mongoose.Schema({
   riskRating: String,
   product: String,
   activityLog: { type: [activityLogSchema], default: [] },
+  comments: { type: [ticketCommentSchema], default: [] },
 }, {
   strict: false,
   versionKey: false,
@@ -155,11 +164,13 @@ function normalizeTicketActivityLogs(tickets) {
     }
     for (const event of ticket.activityLog) {
       if (!event || typeof event !== 'object' || Array.isArray(event)
-        || !['status_changed', 'severity_changed', 'product_changed', 'title_changed'].includes(event.action)
+        || !['status_changed', 'severity_changed', 'product_changed', 'title_changed', 'comment_added'].includes(event.action)
         || (event.action === 'title_changed'
           ? (typeof event.titleFrom !== 'string' || typeof event.titleTo !== 'string')
           : ((event.statusFrom !== null && typeof event.statusFrom !== 'string')
             || (event.statusTo !== null && typeof event.statusTo !== 'string')))
+        || (event.action === 'comment_added'
+          && !['Developer', 'SiyanoAV Team', 'Auditor'].includes(event.commentRole))
         || typeof event.performedBy !== 'string' || !event.performedBy.trim()
         || typeof event.timestamp !== 'string' || !Number.isFinite(Date.parse(event.timestamp))) {
         const error = new Error('Ticket activity log contains an invalid event.');
@@ -329,6 +340,16 @@ function toApiTicket(document) {
       ...event,
       timestamp: new Date(event.timestamp).toISOString(),
     })),
+  };
+}
+
+function toApiComment(comment) {
+  return {
+    id: String(comment._id),
+    author: comment.author,
+    role: comment.role,
+    text: comment.text,
+    createdAt: new Date(comment.createdAt).toISOString(),
   };
 }
 
@@ -1105,6 +1126,59 @@ async function updateTicket(req, res, next) {
 
 app.patch('/api/tickets/:id', updateTicket);
 app.put('/api/tickets/:id', updateTicket);
+
+app.get('/api/tickets/:id/comments', async (req, res, next) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id).select('comments').lean();
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+    return res.json((ticket.comments || []).map(toApiComment));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/tickets/:id/comments', async (req, res, next) => {
+  try {
+    const { role, text } = req.body || {};
+    if (!['Developer', 'SiyanoAV Team', 'Auditor'].includes(role)) {
+      return res.status(400).json({ error: 'Select Developer, SiyanoAV Team, or Auditor as the comment role.' });
+    }
+    if (typeof text !== 'string' || !text.trim() || text.length > 10000) {
+      return res.status(400).json({ error: 'Comment text must be between 1 and 10,000 characters.' });
+    }
+    const createdAt = new Date();
+    const comment = {
+      _id: new mongoose.Types.ObjectId(),
+      author: req.user.username,
+      role,
+      text: text.trim(),
+      createdAt,
+    };
+    const activity = {
+      action: 'comment_added',
+      statusFrom: null,
+      statusTo: null,
+      message: `${role} comment added by ${req.user.username}`,
+      commentRole: role,
+      performedBy: req.user.username,
+      timestamp: createdAt,
+    };
+    const updatedTicket = await Ticket.findByIdAndUpdate(req.params.id, {
+      $push: {
+        comments: comment,
+        activityLog: activity,
+      },
+    }, {
+      new: true,
+      runValidators: true,
+    }).select('comments').lean();
+    if (!updatedTicket) return res.status(404).json({ error: 'Ticket not found.' });
+    const savedComment = updatedTicket.comments.find((entry) => String(entry._id) === String(comment._id));
+    return res.status(201).json(toApiComment(savedComment));
+  } catch (error) {
+    return next(error);
+  }
+});
 
 function getBulkTicketIds(value) {
   if (!Array.isArray(value) || !value.length || value.length > 500
