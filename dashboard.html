@@ -152,6 +152,7 @@
     .active-ticket { color: var(--cyan) !important; font-size: 11px !important; font-weight: 700; }
     .note-form { display: grid; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
     .note-form textarea { min-height: 84px; }
+    .note-form.is-dragging { border-color: var(--cyan); background: rgba(56,189,248,.08); }
     .note-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .file-picker { min-width: 0; color: var(--muted); font-size: 10px; }
     .file-picker input { max-width: 245px; padding: 7px; font-size: 10px; }
@@ -160,7 +161,8 @@
     .recording-state::before { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: currentColor; content: ""; animation: pulse 1s infinite; }
     @keyframes pulse { 50% { opacity: .35; } }
     .audio-preview { width: 100%; height: 36px; }
-    .selected-files { color: #96a9c4; font-size: 10px; overflow-wrap: anywhere; }
+    .selected-files { border: 1px solid rgba(56,189,248,.2); border-radius: 7px; padding: 7px 9px; color: #96a9c4; background: rgba(56,189,248,.06); font-size: 10px; overflow-wrap: anywhere; }
+    .selected-files:empty { display: none; }
     .notes-feed { display: grid; max-height: 450px; gap: 10px; overflow-y: auto; padding: 1px 4px 1px 1px; scrollbar-color: #24415f transparent; }
     .note-card { min-width: 0; border: 1px solid var(--line); border-radius: 11px; padding: 12px; background: rgba(7,15,33,.54); }
     .note-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
@@ -353,6 +355,7 @@
     .workflow-field select { width: 100%; min-width: 0; max-width: 100%; min-height: 34px; border-color: #cbd5e1; border-radius: 7px; padding: 6px 9px; color: #0f172a; background: #ffffff; font-size: 11px; }
     .workflow-message { min-width: 0; color: #64748b; font-size: 10px; overflow-wrap: anywhere; }
     .note-form { gap: 10px; margin-bottom: 14px; padding: 12px; border: 1px solid #dbe3ed; border-radius: 8px; background: #f8fafc; }
+    .note-form.is-dragging { border-color: #0284c7; background: #eff6ff; }
     .note-form textarea { border-color: #cbd5e1; color: #0f172a; background: #ffffff; }
     .note-form textarea::placeholder { color: #94a3b8; }
     .note-form .button.ghost { border-color: #cbd5e1; color: #334155; background: #ffffff; }
@@ -360,7 +363,7 @@
     .file-picker { color: #475569; }
     .file-picker input { border-color: #cbd5e1; color: #334155; background: #ffffff; }
     .recording-state { color: #dc2626; }
-    .selected-files { color: #64748b; }
+    .selected-files { border-color: #bfdbfe; color: #475569; background: #eff6ff; }
     .notes-feed { max-height: 450px; scrollbar-color: #cbd5e1 transparent; }
     .note-card { border-color: #dbe3ed; border-radius: 9px; padding: 12px; background: #ffffff; box-shadow: 0 2px 8px rgba(15,23,42,.045); }
     .note-head { margin: -12px -12px 0; padding: 9px 12px; border-bottom: 1px solid #e2e8f0; border-radius: 8px 8px 0 0; background: #f1f5f9; }
@@ -645,6 +648,7 @@
             </div>
             <form class="note-form" id="note-form">
               <textarea id="note-text" maxlength="10000" placeholder="Record an observation, test result, or remediation note…" aria-label="Audit note text"></textarea>
+              <div class="selected-files" id="selected-files" role="status" aria-live="polite"></div>
               <div class="note-tools">
                 <label class="file-picker">Attach images or PDF <input id="attachment-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" multiple></label>
                 <div class="record-controls">
@@ -653,7 +657,6 @@
                   <button class="button primary small" id="save-note-button" type="submit">Save Note</button>
                 </div>
               </div>
-              <div class="selected-files" id="selected-files"></div>
               <audio class="audio-preview" id="audio-preview" controls hidden></audio>
             </form>
             <div class="notes-feed" id="notes-feed" aria-live="polite"><div class="empty">Choose a ticket to view its notes and evidence.</div></div>
@@ -2030,8 +2033,77 @@
     document.getElementById('attachment-input').addEventListener('change', (event) => {
       const files = [...event.target.files];
       document.getElementById('selected-files').textContent = files.length
-        ? files.map((file) => `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`).join(' · ')
+        ? `Selected files: ${files.map((file) => `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`).join(' · ')}`
         : '';
+    });
+
+    const noteAttachmentMimeTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
+    const noteForm = document.getElementById('note-form');
+    const noteTextarea = document.getElementById('note-text');
+    const noteAttachmentInput = document.getElementById('attachment-input');
+    const selectedFilesStatus = document.getElementById('selected-files');
+
+    function filesFromTransfer(transfer) {
+      const files = [...(transfer.files || [])];
+      for (const item of transfer.items || []) {
+        if (item.kind !== 'file') continue;
+        const file = item.getAsFile();
+        if (file && !files.some((existing) => existing.name === file.name && existing.size === file.size && existing.type === file.type)) {
+          files.push(file);
+        }
+      }
+      return files;
+    }
+
+    function stageNoteAttachments(files, source) {
+      const supportedFiles = files.filter((file) => noteAttachmentMimeTypes.has(file.type.toLowerCase()));
+      const unsupportedCount = files.length - supportedFiles.length;
+      const currentFiles = [...noteAttachmentInput.files];
+      const stagedKeys = new Set(currentFiles.map((file) => `${file.name}\0${file.size}\0${file.type}`));
+      const newFiles = supportedFiles.filter((file) => {
+        const key = `${file.name}\0${file.size}\0${file.type}`;
+        if (stagedKeys.has(key)) return false;
+        stagedKeys.add(key);
+        return true;
+      });
+      const availableSlots = Math.max(0, 8 - currentFiles.length - (recordedAudio ? 1 : 0));
+      const acceptedFiles = newFiles.slice(0, availableSlots);
+      const dataTransfer = new DataTransfer();
+      for (const file of [...currentFiles, ...acceptedFiles]) dataTransfer.items.add(file);
+      noteAttachmentInput.files = dataTransfer.files;
+
+      const stagedFiles = [...noteAttachmentInput.files];
+      selectedFilesStatus.textContent = stagedFiles.length
+        ? `${source}: ${stagedFiles.map((file) => file.name).join(' · ')}`
+        : '';
+      if (unsupportedCount) showToast('Only PNG, JPG, WEBP, and PDF attachments are supported.', true);
+      if (acceptedFiles.length < newFiles.length) showToast('Attach no more than 8 files to one note.', true);
+    }
+
+    noteTextarea.addEventListener('paste', (event) => {
+      const files = filesFromTransfer(event.clipboardData);
+      if (!files.length || !files.some((file) => noteAttachmentMimeTypes.has(file.type.toLowerCase()))) return;
+      event.preventDefault();
+      stageNoteAttachments(files, '📎 Attached from Clipboard');
+    });
+
+    noteForm.addEventListener('dragover', (event) => {
+      if (!Array.from(event.dataTransfer.types).includes('Files')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      noteForm.classList.add('is-dragging');
+    });
+
+    noteForm.addEventListener('dragleave', (event) => {
+      if (!noteForm.contains(event.relatedTarget)) noteForm.classList.remove('is-dragging');
+    });
+
+    noteForm.addEventListener('drop', (event) => {
+      noteForm.classList.remove('is-dragging');
+      const files = filesFromTransfer(event.dataTransfer);
+      if (!files.length) return;
+      event.preventDefault();
+      stageNoteAttachments(files, 'Dropped files');
     });
 
     document.getElementById('ticket-form').addEventListener('submit', async (event) => {
